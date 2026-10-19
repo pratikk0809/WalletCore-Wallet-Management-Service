@@ -1,0 +1,4 @@
+* text=auto
+*.py text eol=lf
+*.ini text eol=lf
+*.mako text eol=lf
