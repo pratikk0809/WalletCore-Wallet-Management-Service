@@ -1,7 +1,5 @@
 """Wallet endpoints. HTTP only."""
-from typing import Annotated
-
-from fastapi import APIRouter, Depends, Header, Response
+from fastapi import APIRouter, Depends, Response
 
 from app.api.deps import (
     get_current_user,
@@ -9,6 +7,7 @@ from app.api.deps import (
     get_transaction_service,
     get_wallet_service,
 )
+from app.api.v1.common import IdempotencyKey, respond
 from app.models.transaction import Transaction
 from app.models.user import User
 from app.models.wallet import Wallet
@@ -19,28 +18,10 @@ from app.schemas.transaction import (
 )
 from app.schemas.wallet import DailyLimitResponse, WalletResponse
 from app.services.limit_service import LimitService
-from app.services.transaction_service import TransactionResult, TransactionService
+from app.services.transaction_service import TransactionService
 from app.services.wallet_service import WalletService
 
 router = APIRouter(prefix="/wallets", tags=["wallets"])
-
-# Same safe character set as request IDs: stops junk and log injection.
-IdempotencyKey = Annotated[
-    str,
-    Header(
-        pattern=r"^[A-Za-z0-9._-]{1,64}$",
-        description="Unique key per operation (1-64 chars: letters, digits, . _ -). "
-        "Retrying with the same key never repeats the operation.",
-    ),
-]
-
-
-def _respond(result: TransactionResult, response: Response) -> Transaction:
-    """201 = new transaction, 200 + header = replay of an earlier request."""
-    if not result.created:
-        response.status_code = 200
-        response.headers["Idempotent-Replayed"] = "true"
-    return result.transaction
 
 
 @router.get("/me", response_model=WalletResponse)
@@ -79,7 +60,7 @@ def deposit(
 ) -> Transaction:
     """Add funds to your wallet. 201 = new deposit, 200 = replay of an earlier request."""
     result = service.deposit(user.id, idempotency_key, body.amount, body.reference)
-    return _respond(result, response)
+    return respond(result, response)
 
 
 @router.post("/withdraw", response_model=TransactionResponse, status_code=201)
@@ -92,4 +73,4 @@ def withdraw(
 ) -> Transaction:
     """Withdraw funds. 201 = new, 200 = replay, 422 = insufficient funds or daily limit."""
     result = service.withdraw(user.id, idempotency_key, body.amount, body.reference)
-    return _respond(result, response)
+    return respond(result, response)

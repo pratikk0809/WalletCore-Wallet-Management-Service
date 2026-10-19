@@ -4,7 +4,7 @@ import logging
 from fastapi import FastAPI
 
 from app.api import health
-from app.api.v1 import auth, wallets
+from app.api.v1 import auth, transfers, wallets
 from app.core.config import get_settings
 from app.core.logging import setup_logging
 from app.exceptions import register_exception_handlers
@@ -12,7 +12,7 @@ from app.middleware.request_id import RequestIDMiddleware
 
 settings = get_settings()
 
-# Logging must be configured before anything else logs. 
+# Logging must be configured before anything else logs.
 setup_logging(settings.log_level)
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,7 @@ register_exception_handlers(app)
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(wallets.router)
+app.include_router(transfers.router)
 
 # Temporary test routes, only in local environment.
 if settings.environment == "local":

@@ -12,6 +12,7 @@ from app.core.money import validate_amount
 from app.exceptions import (
     DuplicateTransactionError,
     InsufficientFundsError,
+    ValidationError,
     WalletFrozenError,
     WalletNotFoundError,
 )
@@ -23,6 +24,7 @@ from app.models.enums import (
 )
 from app.models.ledger_entry import LedgerEntry
 from app.models.transaction import Transaction
+from app.models.wallet import Wallet
 from app.repositories.ledger_repo import LedgerRepository
 from app.repositories.transaction_repo import TransactionRepository
 from app.repositories.wallet_repo import WalletRepository
@@ -58,6 +60,10 @@ class TransactionService:
         self.ledger_repo = ledger_repo
         self.limit_service = limit_service
 
+    # ------------------------------------------------------------------
+    # Public operations
+    # ------------------------------------------------------------------
+
     def deposit(
         self,
         user_id: uuid.UUID,
@@ -81,6 +87,151 @@ class TransactionService:
         return self._execute(
             TransactionType.WITHDRAWAL, user_id, idempotency_key, raw_amount, reference
         )
+
+    def transfer(
+        self,
+        user_id: uuid.UUID,
+        idempotency_key: str,
+        destination_wallet_id: uuid.UUID,
+        raw_amount: object,
+        reference: str | None = None,
+    ) -> TransactionResult:
+        """Move money from the user's wallet to another wallet, atomically."""
+        # 1. Validate input before touching the database.
+        amount = validate_amount(raw_amount)
+        reference = _clean_reference(reference)
+        request_hash = compute_request_hash(
+            TransactionType.TRANSFER.value,
+            amount,
+            reference,
+            destination=str(destination_wallet_id),
+        )
+
+        # 2. Find the sender's wallet. A plain read is safe here: the wallet ID
+        #    of a user never changes (one wallet per user).
+        source = self.wallet_repo.get_by_user_id(user_id)
+        if source is None:
+            logger.error("wallet_missing_for_user", extra={"user_id": str(user_id)})
+            raise WalletNotFoundError()
+
+        # 3. No self-transfer (the DB has a CHECK for this too).
+        if source.id == destination_wallet_id:
+            logger.warning(
+                "transfer_rejected_self_transfer",
+                extra={"wallet_id": str(source.id)},
+            )
+            raise ValidationError("You cannot transfer to your own wallet.")
+
+        # 4. Lock BOTH wallet rows, in ascending ID order (done by the repository).
+        locked = {
+            w.id: w
+            for w in self.wallet_repo.get_by_ids_for_update(
+                [source.id, destination_wallet_id]
+            )
+        }
+        source = locked.get(source.id)
+        destination = locked.get(destination_wallet_id)
+        if source is None:
+            raise WalletNotFoundError()
+
+        # 5. Idempotency: have we already handled this key?
+        existing = self.transaction_repo.get_by_user_and_key(user_id, idempotency_key)
+        if existing is not None:
+            return self._replay(existing, request_hash)
+
+        # 6. Business rules.
+        if destination is None:
+            logger.warning(
+                "transfer_rejected_unknown_destination",
+                extra={"wallet_id": str(source.id)},
+            )
+            raise WalletNotFoundError("Destination wallet not found.")
+
+        if source.status != WalletStatus.ACTIVE:
+            logger.warning(
+                "transaction_rejected_wallet_frozen",
+                extra={"wallet_id": str(source.id), "type": "transfer"},
+            )
+            raise WalletFrozenError("Your wallet is frozen.")
+        if destination.status != WalletStatus.ACTIVE:
+            logger.warning(
+                "transaction_rejected_wallet_frozen",
+                extra={"wallet_id": str(destination.id), "type": "transfer"},
+            )
+            raise WalletFrozenError("Destination wallet is frozen.")
+
+        if source.currency != destination.currency:
+            raise ValidationError("Both wallets must use the same currency.")
+
+        if source.balance < amount:
+            logger.warning(
+                "transfer_rejected_insufficient_funds",
+                extra={"wallet_id": str(source.id), "amount": str(amount)},
+            )
+            raise InsufficientFundsError()
+
+        # The daily limit applies to the SENDER only (also under the lock).
+        self.limit_service.check_daily_limit(source.id, amount)
+
+        # 7. Build the transaction and its two ledger entries.
+        source_new: Decimal = source.balance - amount
+        destination_new: Decimal = destination.balance + amount
+        transaction = Transaction(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            type=TransactionType.TRANSFER.value,
+            status=TransactionStatus.COMPLETED.value,
+            amount=amount,
+            currency=source.currency,
+            source_wallet_id=source.id,
+            destination_wallet_id=destination.id,
+            idempotency_key=idempotency_key,
+            request_hash=request_hash,
+            reference=reference,
+        )
+        entries = [
+            LedgerEntry(  # money leaves the sender
+                id=uuid.uuid4(),
+                transaction_id=transaction.id,
+                wallet_id=source.id,
+                direction=LedgerDirection.DEBIT.value,
+                amount=amount,
+                balance_after=source_new,
+            ),
+            LedgerEntry(  # money arrives at the recipient
+                id=uuid.uuid4(),
+                transaction_id=transaction.id,
+                wallet_id=destination.id,
+                direction=LedgerDirection.CREDIT.value,
+                amount=amount,
+                balance_after=destination_new,
+            ),
+        ]
+
+        # 8. Save everything together, or nothing.
+        result = self._commit(
+            transaction,
+            entries,
+            [(source, source_new), (destination, destination_new)],
+            user_id,
+            idempotency_key,
+            request_hash,
+        )
+        if result.created:
+            logger.info(
+                "transfer_completed",
+                extra={
+                    "transaction_id": str(transaction.id),
+                    "source_wallet_id": str(source.id),
+                    "destination_wallet_id": str(destination.id),
+                    "amount": str(amount),
+                },
+            )
+        return result
+
+    # ------------------------------------------------------------------
+    # Internals
+    # ------------------------------------------------------------------
 
     def _execute(
         self,
@@ -174,15 +325,47 @@ class TransactionService:
         ]
 
         # 8. Save everything together, or nothing.
+        result = self._commit(
+            transaction,
+            entries,
+            [(wallet, new_balance)],
+            user_id,
+            idempotency_key,
+            request_hash,
+        )
+        if result.created:
+            logger.info(
+                f"{txn_type.value}_completed",
+                extra={
+                    "transaction_id": str(transaction.id),
+                    "wallet_id": str(wallet.id),
+                    "amount": str(amount),
+                },
+            )
+        return result
+
+    def _commit(
+        self,
+        transaction: Transaction,
+        entries: list[LedgerEntry],
+        balance_changes: list[tuple[Wallet, Decimal]],
+        user_id: uuid.UUID,
+        idempotency_key: str,
+        request_hash: str,
+    ) -> TransactionResult:
+        """Write the transaction, ledger entries and new balances in ONE DB
+        transaction. Shared by deposit, withdrawal and transfer."""
         try:
             self.transaction_repo.add(transaction)  # must exist before the entries
             self.ledger_repo.add_many(entries)
-            wallet.balance = new_balance
-            wallet.version += 1
+            for wallet, new_balance in balance_changes:
+                wallet.balance = new_balance
+                wallet.version += 1
             self.db.commit()
         except IntegrityError:
             # Safety net: the unique constraint caught a duplicate key that
-            # slipped past step 3. Treat it as a replay if the original exists.
+            # slipped past the idempotency check. Treat it as a replay if the
+            # original exists.
             self.db.rollback()
             existing = self.transaction_repo.get_by_user_and_key(
                 user_id, idempotency_key
@@ -192,14 +375,6 @@ class TransactionService:
             return self._replay(existing, request_hash)
 
         self.db.refresh(transaction)  # load DB-generated values such as created_at
-        logger.info(
-            f"{txn_type.value}_completed",
-            extra={
-                "transaction_id": str(transaction.id),
-                "wallet_id": str(wallet.id),
-                "amount": str(amount),
-            },
-        )
         return TransactionResult(transaction, created=True)
 
     def _replay(self, existing: Transaction, request_hash: str) -> TransactionResult:

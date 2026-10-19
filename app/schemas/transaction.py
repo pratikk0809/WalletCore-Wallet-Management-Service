@@ -18,6 +18,13 @@ class WithdrawRequest(BaseModel):
     reference: str | None = Field(default=None, max_length=255)
 
 
+class TransferRequest(BaseModel):
+    # Pydantic checks this is a valid UUID; a malformed ID gives a 422.
+    destination_wallet_id: uuid.UUID
+    amount: Decimal
+    reference: str | None = Field(default=None, max_length=255)
+
+
 class TransactionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
