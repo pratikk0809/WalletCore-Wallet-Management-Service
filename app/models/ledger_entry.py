@@ -51,6 +51,9 @@ class LedgerEntry(Base):
     # Wallet balance right after this entry (NULL for the external side).
     balance_after: Mapped[Decimal | None] = mapped_column(Numeric(18, 2), nullable=True)
 
+    # clock_timestamp() = the real time of the INSERT (now() would be the time the
+    # DB transaction started). Inserts happen under the wallet lock, so for one
+    # wallet this order always matches the order of its balance changes.
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        DateTime(timezone=True), server_default=func.clock_timestamp(), nullable=False
     )

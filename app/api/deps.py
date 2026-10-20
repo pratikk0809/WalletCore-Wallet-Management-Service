@@ -15,6 +15,7 @@ from app.repositories.wallet_repo import WalletRepository
 from app.services.auth_service import AuthService
 from app.services.history_service import HistoryService
 from app.services.limit_service import LimitService
+from app.services.statement_service import StatementService
 from app.services.transaction_service import TransactionService
 from app.services.wallet_service import WalletService
 
@@ -47,6 +48,10 @@ def get_limit_service(db: Session = Depends(get_db)) -> LimitService:
 
 def get_history_service(db: Session = Depends(get_db)) -> HistoryService:
     return HistoryService(WalletRepository(db), TransactionRepository(db))
+
+
+def get_statement_service(db: Session = Depends(get_db)) -> StatementService:
+    return StatementService(WalletRepository(db), LedgerRepository(db))
 
 
 def get_transaction_service(db: Session = Depends(get_db)) -> TransactionService:

@@ -1,9 +1,12 @@
 """Wallet endpoints. HTTP only."""
-from fastapi import APIRouter, Depends, Response
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, Query, Response
 
 from app.api.deps import (
     get_current_user,
     get_limit_service,
+    get_statement_service,
     get_transaction_service,
     get_wallet_service,
 )
@@ -16,8 +19,18 @@ from app.schemas.transaction import (
     TransactionResponse,
     WithdrawRequest,
 )
-from app.schemas.wallet import DailyLimitResponse, WalletResponse
+from app.schemas.wallet import (
+    DailyLimitResponse,
+    StatementEntry,
+    StatementResponse,
+    WalletResponse,
+)
 from app.services.limit_service import LimitService
+from app.services.statement_service import (
+    DEFAULT_STATEMENT_LIMIT,
+    MAX_STATEMENT_LIMIT,
+    StatementService,
+)
 from app.services.transaction_service import TransactionService
 from app.services.wallet_service import WalletService
 
@@ -47,6 +60,48 @@ def get_my_limits(
         used_today=usage.used,
         remaining_today=usage.remaining,
         resets_at=usage.resets_at,
+    )
+
+
+@router.get("/me/statement", response_model=StatementResponse)
+def get_my_statement(
+    period_start: datetime = Query(
+        ..., description="Inclusive. ISO 8601, e.g. 2026-10-01T00:00:00Z"
+    ),
+    period_end: datetime = Query(
+        ..., description="Exclusive. ISO 8601. At most 366 days after period_start."
+    ),
+    limit: int = Query(DEFAULT_STATEMENT_LIMIT, ge=1, le=MAX_STATEMENT_LIMIT),
+    user: User = Depends(get_current_user),
+    service: StatementService = Depends(get_statement_service),
+) -> StatementResponse:
+    """Ledger statement for a period: opening balance, every line with its running
+    balance (oldest first), closing balance and totals."""
+    statement = service.get_statement(user.id, period_start, period_end, limit)
+    return StatementResponse(
+        wallet_id=statement.wallet.id,
+        currency=statement.wallet.currency,
+        period_start=statement.period_start,
+        period_end=statement.period_end,
+        opening_balance=statement.opening_balance,
+        closing_balance=statement.closing_balance,
+        total_credits=statement.total_credits,
+        total_debits=statement.total_debits,
+        entry_count=statement.entry_count,
+        truncated=statement.truncated,
+        entries=[
+            StatementEntry(
+                id=line.entry.id,
+                transaction_id=line.entry.transaction_id,
+                type=line.txn_type,
+                direction=line.entry.direction,
+                amount=line.entry.amount,
+                balance_after=line.entry.balance_after,
+                reference=line.reference,
+                created_at=line.entry.created_at,
+            )
+            for line in statement.lines
+        ],
     )
 
 
