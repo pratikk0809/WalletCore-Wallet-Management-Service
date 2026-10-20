@@ -38,3 +38,13 @@ class TransactionStatus(StrEnum):
 class LedgerDirection(StrEnum):
     DEBIT = "debit"    # money leaves the wallet
     CREDIT = "credit"  # money enters the wallet
+
+class AuditAction(StrEnum):
+    USER_REGISTERED = "user_registered"
+    LOGIN_SUCCEEDED = "login_succeeded"
+    LOGIN_FAILED = "login_failed"
+    DEPOSIT_COMPLETED = "deposit_completed"
+    WITHDRAWAL_COMPLETED = "withdrawal_completed"
+    TRANSFER_COMPLETED = "transfer_completed"
+    WALLET_FROZEN = "wallet_frozen"
+    WALLET_UNFROZEN = "wallet_unfrozen"
