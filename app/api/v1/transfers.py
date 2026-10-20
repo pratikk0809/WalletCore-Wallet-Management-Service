@@ -11,7 +11,7 @@ from app.services.transaction_service import TransactionService
 router = APIRouter(prefix="/transfers", tags=["transfers"])
 
 
-@router.post("/transfer", response_model=TransactionResponse, status_code=201)
+@router.post("", response_model=TransactionResponse, status_code=201)
 def create_transfer(
     body: TransferRequest,
     response: Response,

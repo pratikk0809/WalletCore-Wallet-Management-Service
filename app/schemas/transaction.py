@@ -37,3 +37,15 @@ class TransactionResponse(BaseModel):
     destination_wallet_id: uuid.UUID | None
     reference: str | None
     created_at: datetime
+
+
+class TransactionHistoryItem(TransactionResponse):
+    """A transaction as seen by ONE user."""
+
+    direction: str  # "in" = money arrived in my wallet, "out" = money left it
+
+
+class TransactionListResponse(BaseModel):
+    items: list[TransactionHistoryItem]
+    # Send this back as ?cursor=... to get the next page. null = no more pages.
+    next_cursor: str | None

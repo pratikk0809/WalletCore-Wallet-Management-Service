@@ -81,3 +81,8 @@ class EmailAlreadyRegisteredError(AppError):
     status_code = 409
     code = "EMAIL_ALREADY_REGISTERED"
     default_message = "An account with this email already exists."
+
+class TransactionNotFoundError(AppError):
+    status_code = 404
+    code = "TRANSACTION_NOT_FOUND"
+    default_message = "Transaction not found."
