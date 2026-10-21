@@ -3,6 +3,7 @@ import json
 import uuid
 from typing import Any
 
+from app.core.request_context import client_ip_ctx
 from app.models.audit_log import AuditLog
 from app.models.enums import AuditAction
 from app.repositories.audit_repo import AuditRepository
@@ -41,7 +42,9 @@ class AuditService:
         ip_address: str | None = None,
     ) -> AuditLog:
         """Stage one audit entry. The CALLER commits, so the entry is saved in
-        the same DB transaction as the operation it describes."""
+        the same DB transaction as the operation it describes.
+
+        If no IP is given, the current request's client IP is used."""
         # Redact first, then make everything JSON-safe (Decimal, UUID, datetime
         # become strings) so a normal-looking dict can never crash the insert.
         clean = json.loads(json.dumps(_redact(metadata or {}), default=str))
@@ -53,6 +56,6 @@ class AuditService:
             entity_type=entity_type,
             entity_id=entity_id,
             details=clean,
-            ip_address=ip_address,
+            ip_address=ip_address or client_ip_ctx.get(),
         )
         return self.audit_repo.add(entry)

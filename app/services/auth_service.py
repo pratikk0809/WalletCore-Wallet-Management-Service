@@ -14,11 +14,12 @@ from app.core.security import (
     verify_password,
 )
 from app.exceptions import AuthenticationError, EmailAlreadyRegisteredError
-from app.models.enums import UserStatus
+from app.models.enums import AuditAction, UserStatus
 from app.models.user import User
 from app.models.wallet import Wallet
 from app.repositories.user_repo import UserRepository
 from app.repositories.wallet_repo import WalletRepository
+from app.services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -31,14 +32,19 @@ def _normalize_email(email: str) -> str:
 
 class AuthService:
     def __init__(
-        self, db: Session, user_repo: UserRepository, wallet_repo: WalletRepository
+        self,
+        db: Session,
+        user_repo: UserRepository,
+        wallet_repo: WalletRepository,
+        audit_service: AuditService,
     ) -> None:
         self.db = db
         self.user_repo = user_repo
         self.wallet_repo = wallet_repo
+        self.audit_service = audit_service
 
     def register(self, email: str, password: str) -> User:
-        """Create a user AND their wallet in one DB transaction."""
+        """Create a user AND their wallet (plus the audit row) in one DB transaction."""
         email = _normalize_email(email)
 
         # Friendly early check. The unique constraint below is the real guarantee.
@@ -56,7 +62,15 @@ class AuthService:
         try:
             self.user_repo.add(user)
             self.wallet_repo.add(wallet)
-            self.db.commit()  # user + wallet saved together, or not at all
+            # Staged in the same DB transaction: no user without an audit row.
+            self.audit_service.record(
+                AuditAction.USER_REGISTERED,
+                entity_type="user",
+                entity_id=user.id,
+                actor_id=user.id,
+                metadata={"wallet_id": wallet.id},
+            )
+            self.db.commit()  # user + wallet + audit row saved together, or not at all
         except IntegrityError:
             # Two requests registered the same email at the same moment;
             # the database unique constraint caught it.
@@ -80,25 +94,46 @@ class AuthService:
             # Burn the same time as a real check so timing doesn't reveal
             # which emails exist.
             verify_password(password, DUMMY_PASSWORD_HASH)
-            logger.warning("login_failed", extra={"reason": "unknown_email"})
-            raise AuthenticationError("Incorrect email or password.")
+            raise self._login_failed(None, "unknown_email", "Incorrect email or password.")
 
         if not verify_password(password, user.password_hash):
-            logger.warning(
-                "login_failed",
-                extra={"reason": "wrong_password", "user_id": str(user.id)},
-            )
-            raise AuthenticationError("Incorrect email or password.")
+            raise self._login_failed(user, "wrong_password", "Incorrect email or password.")
 
         if user.status != UserStatus.ACTIVE:
-            logger.warning(
-                "login_failed",
-                extra={"reason": "account_disabled", "user_id": str(user.id)},
-            )
-            raise AuthenticationError("Account is disabled.")
+            raise self._login_failed(user, "account_disabled", "Account is disabled.")
 
+        self.audit_service.record(
+            AuditAction.LOGIN_SUCCEEDED,
+            entity_type="user",
+            entity_id=user.id,
+            actor_id=user.id,
+        )
+        self.db.commit()
         logger.info("login_succeeded", extra={"user_id": str(user.id)})
         return create_access_token(str(user.id))
+
+    def _login_failed(
+        self, user: User | None, reason: str, message: str
+    ) -> AuthenticationError:
+        """Audit a failed login and return the error for the caller to raise.
+
+        Nothing else is being saved, so we commit the audit row ourselves;
+        otherwise the end-of-request rollback would erase it.
+        The email is never stored: only the reason, the user ID (if known) and the IP.
+        """
+        self.audit_service.record(
+            AuditAction.LOGIN_FAILED,
+            entity_type="user",
+            entity_id=user.id if user else None,
+            actor_id=user.id if user else None,
+            metadata={"reason": reason},
+        )
+        self.db.commit()
+        logger.warning(
+            "login_failed",
+            extra={"reason": reason, "user_id": str(user.id) if user else None},
+        )
+        return AuthenticationError(message)
 
     def get_user_from_token(self, token: str) -> User:
         """Turn a bearer token into an active User, or raise AuthenticationError.

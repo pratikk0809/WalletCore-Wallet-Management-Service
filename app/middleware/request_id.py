@@ -1,4 +1,4 @@
-"""Middleware: assigns a request ID, logs each request, adds X-Request-ID header."""
+"""Middleware: assigns a request ID, records the client IP, logs each request, adds the X-Request-ID header."""
 import logging
 import re
 import time
@@ -9,6 +9,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from app.core.logging import request_id_ctx
+from app.core.request_context import client_ip_ctx
 
 logger = logging.getLogger("app.request")
 
@@ -23,6 +24,15 @@ def _get_request_id(header_value: str | None) -> str:
     return uuid.uuid4().hex
 
 
+def _get_client_ip(request: Request) -> str | None:
+    """The address of the direct TCP peer, cut to 45 chars (the audit column size).
+
+    We deliberately do NOT read X-Forwarded-For: any client can fake that header.
+    Behind a reverse proxy this is the proxy's address (see design notes).
+    """
+    return request.client.host[:45] if request.client else None
+
+
 class RequestIDMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
@@ -32,13 +42,14 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         # Two places: request.state (for exception handlers) and the
         # ContextVar (for the logger).
         request.state.request_id = request_id
-        token = request_id_ctx.set(request_id)
+        id_token = request_id_ctx.set(request_id)
+        ip_token = client_ip_ctx.set(_get_client_ip(request))
         start = time.perf_counter()
 
         try:
             response = await call_next(request)
         except Exception:
-            # Unexpected crash: the global handler (step 1.4) logs the traceback.
+            # Unexpected crash: the global handler logs the traceback.
             logger.error(
                 "request_failed",
                 extra={
@@ -62,4 +73,5 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
             )
             return response
         finally:
-            request_id_ctx.reset(token)
+            client_ip_ctx.reset(ip_token)
+            request_id_ctx.reset(id_token)

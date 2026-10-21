@@ -8,10 +8,12 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.exceptions import AuthenticationError
 from app.models.user import User
+from app.repositories.audit_repo import AuditRepository
 from app.repositories.ledger_repo import LedgerRepository
 from app.repositories.transaction_repo import TransactionRepository
 from app.repositories.user_repo import UserRepository
 from app.repositories.wallet_repo import WalletRepository
+from app.services.audit_service import AuditService
 from app.services.auth_service import AuthService
 from app.services.history_service import HistoryService
 from app.services.limit_service import LimitService
@@ -33,9 +35,15 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
+def get_audit_service(db: Session = Depends(get_db)) -> AuditService:
+    return AuditService(AuditRepository(db))
+
+
 def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
     """Build an AuthService with its repositories (dependency injection)."""
-    return AuthService(db, UserRepository(db), WalletRepository(db))
+    return AuthService(
+        db, UserRepository(db), WalletRepository(db), AuditService(AuditRepository(db))
+    )
 
 
 def get_wallet_service(db: Session = Depends(get_db)) -> WalletService:
@@ -62,6 +70,7 @@ def get_transaction_service(db: Session = Depends(get_db)) -> TransactionService
         transaction_repo,
         LedgerRepository(db),
         LimitService(transaction_repo),
+        AuditService(AuditRepository(db)),
     )
 
 

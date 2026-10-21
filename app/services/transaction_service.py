@@ -17,6 +17,7 @@ from app.exceptions import (
     WalletNotFoundError,
 )
 from app.models.enums import (
+    AuditAction,
     LedgerDirection,
     TransactionStatus,
     TransactionType,
@@ -28,6 +29,7 @@ from app.models.wallet import Wallet
 from app.repositories.ledger_repo import LedgerRepository
 from app.repositories.transaction_repo import TransactionRepository
 from app.repositories.wallet_repo import WalletRepository
+from app.services.audit_service import AuditService
 from app.services.limit_service import LimitService
 
 logger = logging.getLogger(__name__)
@@ -53,12 +55,14 @@ class TransactionService:
         transaction_repo: TransactionRepository,
         ledger_repo: LedgerRepository,
         limit_service: LimitService,
+        audit_service: AuditService,
     ) -> None:
         self.db = db
         self.wallet_repo = wallet_repo
         self.transaction_repo = transaction_repo
         self.ledger_repo = ledger_repo
         self.limit_service = limit_service
+        self.audit_service = audit_service
 
     # ------------------------------------------------------------------
     # Public operations
@@ -353,14 +357,29 @@ class TransactionService:
         idempotency_key: str,
         request_hash: str,
     ) -> TransactionResult:
-        """Write the transaction, ledger entries and new balances in ONE DB
-        transaction. Shared by deposit, withdrawal and transfer."""
+        """Write the transaction, ledger entries, new balances AND the audit row
+        in ONE DB transaction. Shared by deposit, withdrawal and transfer."""
         try:
             self.transaction_repo.add(transaction)  # must exist before the entries
             self.ledger_repo.add_many(entries)
             for wallet, new_balance in balance_changes:
                 wallet.balance = new_balance
                 wallet.version += 1
+            # "deposit" -> deposit_completed, "withdrawal" -> withdrawal_completed, ...
+            # The free-text `reference` is deliberately NOT copied (it may hold personal data).
+            self.audit_service.record(
+                AuditAction(f"{transaction.type}_completed"),
+                entity_type="transaction",
+                entity_id=transaction.id,
+                actor_id=user_id,
+                metadata={
+                    "type": transaction.type,
+                    "amount": transaction.amount,
+                    "currency": transaction.currency,
+                    "source_wallet_id": transaction.source_wallet_id,
+                    "destination_wallet_id": transaction.destination_wallet_id,
+                },
+            )
             self.db.commit()
         except IntegrityError:
             # Safety net: the unique constraint caught a duplicate key that

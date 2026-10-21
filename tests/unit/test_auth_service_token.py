@@ -18,7 +18,7 @@ def user_repo():
 
 @pytest.fixture
 def service(user_repo):
-    return AuthService(MagicMock(), user_repo, MagicMock())
+    return AuthService(MagicMock(), user_repo, MagicMock(), MagicMock())
 
 
 def make_user(status: str = "active") -> User:

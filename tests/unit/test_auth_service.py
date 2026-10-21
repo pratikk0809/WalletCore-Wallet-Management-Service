@@ -32,7 +32,7 @@ def wallet_repo():
 
 @pytest.fixture
 def service(db, user_repo, wallet_repo):
-    return AuthService(db, user_repo, wallet_repo)
+    return AuthService(db, user_repo, wallet_repo, MagicMock())
 
 
 def make_user(status: str = "active") -> User:

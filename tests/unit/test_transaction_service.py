@@ -46,7 +46,7 @@ def limit_service():
 
 @pytest.fixture
 def service(db, wallet_repo, txn_repo, ledger_repo, limit_service):
-    return TransactionService(db, wallet_repo, txn_repo, ledger_repo, limit_service)
+    return TransactionService(db, wallet_repo, txn_repo, ledger_repo, limit_service, MagicMock())
 
 
 def make_wallet(balance: str = "5.00", status: str = "active") -> Wallet:
