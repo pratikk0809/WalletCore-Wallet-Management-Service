@@ -4,7 +4,7 @@ import logging
 from fastapi import FastAPI
 
 from app.api import health
-from app.api.v1 import auth, transactions, transfers, wallets
+from app.api.v1 import admin, auth, transactions, transfers, wallets
 from app.core.config import get_settings
 from app.core.logging import setup_logging
 from app.exceptions import register_exception_handlers
@@ -28,8 +28,9 @@ app.include_router(auth.router)
 app.include_router(wallets.router)
 app.include_router(transfers.router)
 app.include_router(transactions.router)
+app.include_router(admin.router)
 
-# Temporary test routes, only in local environment.
+# Temporary test routes, only in local environment (removed in step 6.5).
 if settings.environment == "local":
     from app.api import debug
 

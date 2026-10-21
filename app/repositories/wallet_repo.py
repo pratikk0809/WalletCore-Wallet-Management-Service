@@ -28,6 +28,15 @@ class WalletRepository:
             .execution_options(populate_existing=True)
         )
 
+    def get_by_id_for_update(self, wallet_id: uuid.UUID) -> Wallet | None:
+        """Load a wallet by its own ID AND lock the row until the DB transaction ends."""
+        return self.db.scalar(
+            select(Wallet)
+            .where(Wallet.id == wallet_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+
     def get_by_ids_for_update(self, wallet_ids: Sequence[uuid.UUID]) -> list[Wallet]:
         """Lock several wallet rows at once, always in ascending ID order.
 

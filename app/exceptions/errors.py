@@ -86,3 +86,10 @@ class TransactionNotFoundError(AppError):
     status_code = 404
     code = "TRANSACTION_NOT_FOUND"
     default_message = "Transaction not found."
+
+class ForbiddenError(AppError):
+    """Logged in, but not allowed to do this (e.g. a non-admin on an admin route)."""
+
+    status_code = 403
+    code = "FORBIDDEN"
+    default_message = "You do not have permission to do this."

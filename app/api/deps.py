@@ -6,13 +6,15 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
-from app.exceptions import AuthenticationError
+from app.exceptions import AuthenticationError, ForbiddenError
+from app.models.enums import UserRole
 from app.models.user import User
 from app.repositories.audit_repo import AuditRepository
 from app.repositories.ledger_repo import LedgerRepository
 from app.repositories.transaction_repo import TransactionRepository
 from app.repositories.user_repo import UserRepository
 from app.repositories.wallet_repo import WalletRepository
+from app.services.admin_service import AdminService
 from app.services.audit_service import AuditService
 from app.services.auth_service import AuthService
 from app.services.history_service import HistoryService
@@ -62,6 +64,10 @@ def get_statement_service(db: Session = Depends(get_db)) -> StatementService:
     return StatementService(WalletRepository(db), LedgerRepository(db))
 
 
+def get_admin_service(db: Session = Depends(get_db)) -> AdminService:
+    return AdminService(db, WalletRepository(db), AuditService(AuditRepository(db)))
+
+
 def get_transaction_service(db: Session = Depends(get_db)) -> TransactionService:
     transaction_repo = TransactionRepository(db)
     return TransactionService(
@@ -82,3 +88,10 @@ def get_current_user(
     if token is None:
         raise AuthenticationError("Not authenticated.")
     return service.get_user_from_token(token)
+
+
+def get_current_admin(user: User = Depends(get_current_user)) -> User:
+    """Protects an admin route: login required AND role must be 'admin'."""
+    if user.role != UserRole.ADMIN:
+        raise ForbiddenError("Admin access required.")
+    return user
