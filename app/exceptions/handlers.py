@@ -18,6 +18,8 @@ _HTTP_CODES = {
     403: "FORBIDDEN",
     404: "NOT_FOUND",
     405: "METHOD_NOT_ALLOWED",
+    409: "CONFLICT",
+    429: "TOO_MANY_REQUESTS",
 }
 
 
@@ -27,6 +29,7 @@ def _error_response(
     code: str,
     message: str,
     details: list[dict[str, str]] | None = None,
+    headers: dict[str, str] | None = None,
 ) -> JSONResponse:
     """Build the standard error body: {"error": {code, message, request_id}}."""
     request_id = getattr(request.state, "request_id", None)
@@ -39,8 +42,16 @@ def _error_response(
     if details:
         error["details"] = details
 
-    headers = {"X-Request-ID": request_id} if request_id else None
-    return JSONResponse(status_code=status_code, content={"error": error}, headers=headers)
+    response_headers: dict[str, str] = {}
+    if request_id:
+        response_headers["X-Request-ID"] = request_id
+    if headers:
+        response_headers.update(headers)  # e.g. Retry-After
+    return JSONResponse(
+        status_code=status_code,
+        content={"error": error},
+        headers=response_headers or None,
+    )
 
 
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
@@ -54,7 +65,13 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
             "request_id": getattr(request.state, "request_id", None),
         },
     )
-    return _error_response(request, exc.status_code, exc.code, exc.message)
+    return _error_response(
+        request,
+        exc.status_code,
+        exc.code,
+        exc.message,
+        headers=getattr(exc, "headers", None),  # only some errors carry headers
+    )
 
 
 async def request_validation_handler(

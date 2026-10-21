@@ -93,3 +93,18 @@ class ForbiddenError(AppError):
     status_code = 403
     code = "FORBIDDEN"
     default_message = "You do not have permission to do this."
+
+class RateLimitedError(AppError):
+    """Too many requests in the current window (HTTP 429)."""
+
+    status_code = 429
+    code = "RATE_LIMITED"
+    default_message = "Too many requests. Please slow down."
+
+    def __init__(self, message: str | None = None, retry_after: int = 1) -> None:
+        super().__init__(
+            message or f"Too many requests. Try again in {retry_after} seconds."
+        )
+        self.retry_after = retry_after
+        # Extra HTTP headers the global handler will add to the response.
+        self.headers = {"Retry-After": str(retry_after)}

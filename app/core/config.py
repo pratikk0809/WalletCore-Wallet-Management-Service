@@ -31,6 +31,14 @@ class Settings(BaseSettings):
     # Max total a wallet may send out per UTC day (withdrawals + transfers).
     daily_limit: Decimal = Decimal("50000.00")
 
+    # Rate limiting: max requests per window (seconds). Login/register are counted
+    # per client IP, money endpoints per user. Counters are in memory (per process).
+    rate_limit_enabled: bool = True
+    rate_limit_window_seconds: int = Field(default=60, gt=0)
+    login_rate_limit: int = Field(default=10, gt=0)
+    register_rate_limit: int = Field(default=5, gt=0)
+    money_rate_limit: int = Field(default=30, gt=0)
+
     # Read from .env if present; ignore extra variables (e.g. POSTGRES_USER).
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

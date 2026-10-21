@@ -13,6 +13,7 @@ from app.api.deps import get_db
 from app.core.config import get_settings
 from app.main import app
 from app.models import Base
+from app.core.rate_limit import rate_limiter
 
 settings = get_settings()
 _dev_url = make_url(settings.database_url)
@@ -67,3 +68,15 @@ def client(engine):
         yield test_client
 
     app.dependency_overrides.clear()
+
+
+
+
+@pytest.fixture(autouse=True)
+def no_rate_limits(monkeypatch):
+    """Rate limiting is off in integration tests by default, with a clean counter.
+    test_rate_limit.py switches it back on."""
+    monkeypatch.setattr(get_settings(), "rate_limit_enabled", False)
+    rate_limiter.reset()
+    yield
+    rate_limiter.reset()

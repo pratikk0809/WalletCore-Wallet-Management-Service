@@ -2,6 +2,7 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, Response
+from app.api.rate_limits import limit_money
 
 from app.api.deps import (
     get_current_user,
@@ -105,7 +106,12 @@ def get_my_statement(
     )
 
 
-@router.post("/deposit", response_model=TransactionResponse, status_code=201)
+@router.post(
+    "/deposit",
+    response_model=TransactionResponse,
+    status_code=201,
+    dependencies=[Depends(limit_money)],
+)
 def deposit(
     body: DepositRequest,
     response: Response,
@@ -118,7 +124,12 @@ def deposit(
     return respond(result, response)
 
 
-@router.post("/withdraw", response_model=TransactionResponse, status_code=201)
+@router.post(
+    "/withdraw",
+    response_model=TransactionResponse,
+    status_code=201,
+    dependencies=[Depends(limit_money)],
+)
 def withdraw(
     body: WithdrawRequest,
     response: Response,
