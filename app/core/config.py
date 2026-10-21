@@ -2,7 +2,7 @@
 from decimal import Decimal
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -41,6 +41,17 @@ class Settings(BaseSettings):
 
     # Read from .env if present; ignore extra variables (e.g. POSTGRES_USER).
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @model_validator(mode="after")
+    def _check_amount_limits(self) -> "Settings":
+        """A bad combination would make every deposit fail, so stop at startup."""
+        if self.min_transaction_amount <= 0:
+            raise ValueError("MIN_TRANSACTION_AMOUNT must be greater than zero.")
+        if self.min_transaction_amount >= self.max_transaction_amount:
+            raise ValueError(
+                "MIN_TRANSACTION_AMOUNT must be smaller than MAX_TRANSACTION_AMOUNT."
+            )
+        return self
 
 
 @lru_cache

@@ -1,10 +1,11 @@
 """Read-only business logic for transaction history. Never imports FastAPI."""
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import NamedTuple
 
 from app.core.pagination import decode_cursor, encode_cursor
+from app.core.timeutils import as_utc
 from app.exceptions import (
     TransactionNotFoundError,
     ValidationError,
@@ -32,13 +33,6 @@ class TransactionDetail(NamedTuple):
     transaction: Transaction
 
 
-def _as_utc(value: datetime | None) -> datetime | None:
-    """A datetime without a timezone is treated as UTC."""
-    if value is not None and value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
-    return value
-
-
 class HistoryService:
     def __init__(
         self, wallet_repo: WalletRepository, transaction_repo: TransactionRepository
@@ -59,8 +53,9 @@ class HistoryService:
     ) -> TransactionPage:
         """One page of the user's transactions, newest first."""
         # 1. Validate input before touching the database.
-        created_from = _as_utc(created_from)
-        created_to = _as_utc(created_to)
+        #    A date without a timezone is treated as UTC (shared helper).
+        created_from = as_utc(created_from) if created_from else None
+        created_to = as_utc(created_to) if created_to else None
         if created_from and created_to and created_from > created_to:
             raise ValidationError("created_from must not be after created_to.")
         after = decode_cursor(cursor) if cursor else None

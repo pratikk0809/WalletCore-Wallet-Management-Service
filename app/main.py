@@ -30,10 +30,4 @@ app.include_router(transfers.router)
 app.include_router(transactions.router)
 app.include_router(admin.router)
 
-# Temporary test routes, only in local environment (removed in step 6.5).
-if settings.environment == "local":
-    from app.api import debug
-
-    app.include_router(debug.router)
-
 logger.info("app_started", extra={"environment": settings.environment})

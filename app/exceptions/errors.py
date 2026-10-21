@@ -75,6 +75,8 @@ class AuthenticationError(AppError):
     status_code = 401
     code = "UNAUTHORIZED"
     default_message = "Could not validate credentials."
+    # Required by the HTTP standard on every 401: tells the client the login scheme.
+    headers = {"WWW-Authenticate": "Bearer"}
 
 
 class EmailAlreadyRegisteredError(AppError):
