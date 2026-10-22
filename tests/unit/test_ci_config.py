@@ -1,4 +1,5 @@
 """The CI workflow and dependency files exist and keep their key pieces."""
+
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
