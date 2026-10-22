@@ -1,5 +1,7 @@
 # Wallet & Transaction Service
 
+![CI](https://github.com/pratik0809/wallet-service/actions/workflows/ci.yml/badge.svg)
+
 A backend wallet and transaction service (a mini fintech core) built with FastAPI, PostgreSQL, SQLAlchemy 2.0 and Alembic. It focuses on getting money handling right: a double-entry ledger, idempotent requests, row-level locking, an audit trail, and database-enforced rules.
 
 **Out of scope (v1):** real payment gateways, KYC, currency conversion, any UI.
@@ -25,6 +27,7 @@ A backend wallet and transaction service (a mini fintech core) built with FastAP
 | Auth | JWT (HS256), Argon2 via `pwdlib` |
 | Tests | pytest, httpx2 (FastAPI TestClient), real PostgreSQL |
 | Containers | Docker, docker-compose |
+| CI | GitHub Actions (ruff, black, pytest with a PostgreSQL service) |
 
 ## Quick start
 
@@ -79,6 +82,13 @@ All settings come from environment variables (see `.env.example`). The important
 
 ```bash
 docker compose exec app python -m pytest -v
+```
+
+Lint and format checks (also run by CI on every push):
+
+```bash
+docker compose exec app ruff check .
+docker compose exec app black --check .
 ```
 
 392 tests, split into unit tests (mocked repositories) and integration tests (real PostgreSQL, a separate `<db>_test` database). They include concurrency tests (no overdraft, no deadlocks, parallel same-key requests), a mixed-load test checked by a ledger auditor, and a test that builds a scratch database with the real Alembic migrations.
