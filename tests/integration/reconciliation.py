@@ -2,6 +2,7 @@
 
 `find_ledger_problems(engine)` returns a list of human-readable problems.
 An empty list means the books are consistent."""
+
 from sqlalchemy import text
 
 # 1. Every wallet balance must equal credits minus debits in its ledger entries.

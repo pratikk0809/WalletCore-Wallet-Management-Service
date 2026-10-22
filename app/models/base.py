@@ -1,4 +1,5 @@
 """Base class that all SQLAlchemy models inherit from."""
+
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase
 

@@ -1,5 +1,6 @@
 """Unit tests for AuthService. Repositories and the DB session are mocked,
 so these tests run without a database."""
+
 import uuid
 from unittest.mock import MagicMock, patch
 
@@ -46,6 +47,7 @@ def make_user(status: str = "active") -> User:
 
 # ---------- register ----------
 
+
 def test_register_creates_user_and_wallet(service, db, user_repo, wallet_repo):
     user_repo.get_by_email.return_value = None
 
@@ -91,6 +93,7 @@ def test_register_race_condition_rolls_back(service, db, user_repo):
 
 
 # ---------- login ----------
+
 
 def test_login_success_returns_token_for_user(service, user_repo):
     user = make_user()

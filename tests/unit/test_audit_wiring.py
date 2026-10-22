@@ -1,4 +1,5 @@
 """Unit tests: audit logging is wired into AuthService and TransactionService."""
+
 import uuid
 from decimal import Decimal
 from unittest.mock import MagicMock
@@ -43,6 +44,7 @@ def audit(calls):
 
 
 # ---------- AuthService ----------
+
 
 @pytest.fixture
 def user_repo():
@@ -96,9 +98,7 @@ def test_successful_login_is_audited_and_committed(auth, user_repo, audit, calls
     assert kwargs["actor_id"] == user.id
 
 
-def test_wrong_password_is_audited_and_committed_before_the_error(
-    auth, user_repo, audit, calls
-):
+def test_wrong_password_is_audited_and_committed_before_the_error(auth, user_repo, audit, calls):
     user = make_user()
     user_repo.get_by_email.return_value = user
 
@@ -112,9 +112,7 @@ def test_wrong_password_is_audited_and_committed_before_the_error(
     assert kwargs["metadata"] == {"reason": "wrong_password"}
 
 
-def test_unknown_email_is_audited_without_actor_and_without_the_email(
-    auth, user_repo, audit
-):
+def test_unknown_email_is_audited_without_actor_and_without_the_email(auth, user_repo, audit):
     user_repo.get_by_email.return_value = None
 
     with pytest.raises(AuthenticationError):
@@ -138,6 +136,7 @@ def test_disabled_account_login_is_audited(auth, user_repo, audit):
 
 # ---------- TransactionService ----------
 
+
 @pytest.fixture
 def wallet_repo():
     return MagicMock()
@@ -152,15 +151,17 @@ def txn_repo():
 
 @pytest.fixture
 def txns(db, wallet_repo, txn_repo, audit):
-    return TransactionService(
-        db, wallet_repo, txn_repo, MagicMock(), MagicMock(), audit
-    )
+    return TransactionService(db, wallet_repo, txn_repo, MagicMock(), MagicMock(), audit)
 
 
 def make_wallet(balance: str = "100.00") -> Wallet:
     return Wallet(
-        id=uuid.uuid4(), user_id=uuid.uuid4(), currency="INR",
-        balance=Decimal(balance), status="active", version=1,
+        id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        currency="INR",
+        balance=Decimal(balance),
+        status="active",
+        version=1,
     )
 
 
@@ -211,8 +212,13 @@ def test_replay_records_nothing(txns, wallet_repo, txn_repo, audit):
     wallet = make_wallet()
     wallet_repo.get_by_user_id_for_update.return_value = wallet
     txn_repo.get_by_user_and_key.return_value = Transaction(
-        id=uuid.uuid4(), user_id=wallet.user_id, type="deposit", status="completed",
-        amount=Decimal("10.00"), currency="INR", destination_wallet_id=wallet.id,
+        id=uuid.uuid4(),
+        user_id=wallet.user_id,
+        type="deposit",
+        status="completed",
+        amount=Decimal("10.00"),
+        currency="INR",
+        destination_wallet_id=wallet.id,
         idempotency_key="key-1",
         request_hash=compute_request_hash("deposit", Decimal("10.00"), None),
     )
@@ -245,6 +251,7 @@ def test_if_the_audit_write_fails_nothing_is_committed(txns, db, wallet_repo, au
 
 
 # ---------- AuditService: client IP ----------
+
 
 def test_record_uses_the_client_ip_from_the_request_context():
     repo = MagicMock()

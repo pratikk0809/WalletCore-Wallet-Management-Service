@@ -1,4 +1,5 @@
 """Database access for transactions. No business rules here."""
+
 import uuid
 from datetime import datetime
 from decimal import Decimal
@@ -14,9 +15,7 @@ class TransactionRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def get_by_user_and_key(
-        self, user_id: uuid.UUID, idempotency_key: str
-    ) -> Transaction | None:
+    def get_by_user_and_key(self, user_id: uuid.UUID, idempotency_key: str) -> Transaction | None:
         return self.db.scalar(
             select(Transaction).where(
                 Transaction.user_id == user_id,
@@ -67,17 +66,12 @@ class TransactionRepository:
         if after is not None:
             # Compare the (created_at, id) PAIR so equal timestamps are handled.
             stmt = stmt.where(
-                tuple_(Transaction.created_at, Transaction.id)
-                < tuple_(after[0], after[1])
+                tuple_(Transaction.created_at, Transaction.id) < tuple_(after[0], after[1])
             )
-        stmt = stmt.order_by(
-            Transaction.created_at.desc(), Transaction.id.desc()
-        ).limit(limit)
+        stmt = stmt.order_by(Transaction.created_at.desc(), Transaction.id.desc()).limit(limit)
         return list(self.db.scalars(stmt))
 
-    def get_for_wallet(
-        self, transaction_id: uuid.UUID, wallet_id: uuid.UUID
-    ) -> Transaction | None:
+    def get_for_wallet(self, transaction_id: uuid.UUID, wallet_id: uuid.UUID) -> Transaction | None:
         """One transaction, but only if this wallet took part in it."""
         return self.db.scalar(
             select(Transaction).where(

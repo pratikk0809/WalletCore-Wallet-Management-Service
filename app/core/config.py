@@ -1,4 +1,5 @@
 """Application settings, loaded from environment variables / .env file."""
+
 from decimal import Decimal
 from functools import lru_cache
 
@@ -48,9 +49,7 @@ class Settings(BaseSettings):
         if self.min_transaction_amount <= 0:
             raise ValueError("MIN_TRANSACTION_AMOUNT must be greater than zero.")
         if self.min_transaction_amount >= self.max_transaction_amount:
-            raise ValueError(
-                "MIN_TRANSACTION_AMOUNT must be smaller than MAX_TRANSACTION_AMOUNT."
-            )
+            raise ValueError("MIN_TRANSACTION_AMOUNT must be smaller than MAX_TRANSACTION_AMOUNT.")
         return self
 
 

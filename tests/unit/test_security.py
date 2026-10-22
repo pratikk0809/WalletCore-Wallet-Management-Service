@@ -1,4 +1,5 @@
 """Unit tests for app/core/security.py."""
+
 from datetime import timedelta
 
 import jwt
@@ -57,9 +58,7 @@ def test_token_signed_with_another_key_is_rejected():
 
 
 def test_token_without_expiry_is_rejected():
-    no_exp = jwt.encode(
-        {"sub": "user-123"}, settings.secret_key, algorithm=settings.jwt_algorithm
-    )
+    no_exp = jwt.encode({"sub": "user-123"}, settings.secret_key, algorithm=settings.jwt_algorithm)
     with pytest.raises(AuthenticationError):
         decode_access_token(no_exp)
 

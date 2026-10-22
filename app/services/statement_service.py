@@ -1,4 +1,5 @@
 """Read-only business logic for account statements. Never imports FastAPI."""
+
 import logging
 import uuid
 from datetime import datetime, timedelta
@@ -45,9 +46,7 @@ def _money(value: Decimal | None) -> Decimal:
 
 
 class StatementService:
-    def __init__(
-        self, wallet_repo: WalletRepository, ledger_repo: LedgerRepository
-    ) -> None:
+    def __init__(self, wallet_repo: WalletRepository, ledger_repo: LedgerRepository) -> None:
         self.wallet_repo = wallet_repo
         self.ledger_repo = ledger_repo
 

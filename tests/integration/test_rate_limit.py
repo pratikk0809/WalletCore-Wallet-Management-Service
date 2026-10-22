@@ -1,4 +1,5 @@
 """Integration tests for rate limiting (real PostgreSQL, fake clock)."""
+
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -81,9 +82,8 @@ def transfer(client, headers, to_wallet_id, key, amount="1.00"):
 
 # ---------- login ----------
 
-def test_login_is_blocked_after_too_many_attempts_and_the_block_is_not_audited(
-    client, engine
-):
+
+def test_login_is_blocked_after_too_many_attempts_and_the_block_is_not_audited(client, engine):
     register(client, "alice@example.com")
     for _ in range(3):
         assert login(client, "alice@example.com", "wrong-pass1").status_code == 401
@@ -95,15 +95,11 @@ def test_login_is_blocked_after_too_many_attempts_and_the_block_is_not_audited(
     assert 1 <= int(blocked.headers["Retry-After"]) <= 60
     assert blocked.headers["X-Request-ID"]
     with engine.connect() as conn:
-        failed = conn.scalar(
-            text("SELECT count(*) FROM audit_logs WHERE action = 'login_failed'")
-        )
+        failed = conn.scalar(text("SELECT count(*) FROM audit_logs WHERE action = 'login_failed'"))
     assert failed == 3  # the blocked attempt never reached the service
 
 
-def test_retry_after_shrinks_as_time_passes_and_login_works_after_the_window(
-    client, clock
-):
+def test_retry_after_shrinks_as_time_passes_and_login_works_after_the_window(client, clock):
     register(client, "alice@example.com")
     for _ in range(3):
         login(client, "alice@example.com", "wrong-pass1")
@@ -117,6 +113,7 @@ def test_retry_after_shrinks_as_time_passes_and_login_works_after_the_window(
 
 
 # ---------- register ----------
+
 
 def test_register_is_limited_per_ip(client):
     for i in range(4):
@@ -137,6 +134,7 @@ def test_register_and_login_use_separate_budgets(client):
 
 
 # ---------- money endpoints ----------
+
 
 def test_deposit_withdraw_and_transfer_share_one_per_user_budget(client):
     alice, _ = make_user(client, "alice@example.com")
@@ -196,6 +194,7 @@ def test_parallel_requests_cannot_beat_the_limit(client):
 
 
 # ---------- switch ----------
+
 
 def test_limits_can_be_switched_off(client, monkeypatch):
     monkeypatch.setattr(get_settings(), "rate_limit_enabled", False)

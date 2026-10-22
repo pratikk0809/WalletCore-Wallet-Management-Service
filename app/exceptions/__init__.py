@@ -1,4 +1,5 @@
 """Public exports for the exceptions package."""
+
 from app.exceptions.errors import (
     AppError,
     AuthenticationError,

@@ -1,4 +1,5 @@
 """Integration tests for POST /wallets/deposit against a real PostgreSQL database."""
+
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 
@@ -177,9 +178,7 @@ def test_concurrent_deposits_do_not_lose_updates(client):
 
     with ThreadPoolExecutor(max_workers=5) as pool:
         responses = list(
-            pool.map(
-                lambda i: deposit(client, headers, "10.00", key=f"key-{i}"), range(5)
-            )
+            pool.map(lambda i: deposit(client, headers, "10.00", key=f"key-{i}"), range(5))
         )
 
     assert all(r.status_code == 201 for r in responses)

@@ -1,4 +1,5 @@
 """Integration tests for GET /transactions and GET /transactions/{id}."""
+
 import pytest
 from sqlalchemy import text
 
@@ -51,6 +52,7 @@ def ids(body) -> list[str]:
 
 
 # ---------- GET /transactions ----------
+
 
 def test_new_user_has_an_empty_history(client):
     headers, _ = make_user(client, "alice@example.com")
@@ -216,8 +218,10 @@ def test_from_after_to_returns_422(client):
     headers, _ = make_user(client, "alice@example.com")
 
     response = listing(
-        client, headers,
-        created_from="2026-06-01T00:00:00Z", created_to="2026-01-01T00:00:00Z",
+        client,
+        headers,
+        created_from="2026-06-01T00:00:00Z",
+        created_to="2026-01-01T00:00:00Z",
     )
 
     assert response.status_code == 422
@@ -228,6 +232,7 @@ def test_history_requires_login(client):
 
 
 # ---------- GET /transactions/{id} ----------
+
 
 def test_get_own_transaction(client):
     headers, _ = make_user(client, "alice@example.com")

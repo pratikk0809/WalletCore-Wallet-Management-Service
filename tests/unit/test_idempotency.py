@@ -1,4 +1,5 @@
 """Unit tests for the request fingerprint."""
+
 from decimal import Decimal
 
 from app.core.idempotency import compute_request_hash

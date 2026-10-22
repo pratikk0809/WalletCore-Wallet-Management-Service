@@ -1,4 +1,5 @@
 """Business logic for wallets. Never imports FastAPI."""
+
 import logging
 import uuid
 

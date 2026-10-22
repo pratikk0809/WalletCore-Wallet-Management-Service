@@ -1,4 +1,5 @@
 """Unit tests for cursor encoding (no database needed)."""
+
 import base64
 import uuid
 from datetime import datetime, timezone

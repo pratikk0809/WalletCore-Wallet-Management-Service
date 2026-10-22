@@ -1,4 +1,5 @@
 """Integration tests for the Phase 6 cleanup: 401 header and removed debug routes."""
+
 import pytest
 
 PASSWORD = "S3cret!pass"

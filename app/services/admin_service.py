@@ -1,4 +1,5 @@
 """Admin operations. Never imports FastAPI."""
+
 import logging
 import uuid
 from typing import NamedTuple
@@ -40,9 +41,7 @@ class AdminService:
         # 1. Lock the wallet row so two admins can't change it at the same time.
         wallet = self.wallet_repo.get_by_id_for_update(wallet_id)
         if wallet is None:
-            logger.warning(
-                "admin_wallet_not_found", extra={"admin_id": str(admin_id)}
-            )
+            logger.warning("admin_wallet_not_found", extra={"admin_id": str(admin_id)})
             raise WalletNotFoundError()
 
         # 2. Already in the requested state: nothing to change, nothing to audit.

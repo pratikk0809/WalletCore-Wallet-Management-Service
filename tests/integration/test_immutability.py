@@ -2,6 +2,7 @@
 
 Uses its own scratch database (<db>_migrated) so the normal test database,
 built with create_all, is not affected."""
+
 import os
 import subprocess
 import sys
@@ -34,7 +35,9 @@ def migrated_engine():
     env = {**os.environ, "DATABASE_URL": _scratch_url.render_as_string(hide_password=False)}
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head"],
-        env=env, capture_output=True, text=True,
+        env=env,
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 0, result.stderr
     engine = create_engine(_scratch_url)
@@ -73,8 +76,14 @@ def insert_transaction(conn, user_id, wallet_id, status="completed"):
             "destination_wallet_id, idempotency_key, request_hash) VALUES "
             "(:id, :uid, 'deposit', :status, 10.00, 'INR', :wid, :key, :hash)"
         ),
-        {"id": txn_id, "uid": user_id, "status": status, "wid": wallet_id,
-         "key": uuid.uuid4().hex, "hash": "h" * 64},
+        {
+            "id": txn_id,
+            "uid": user_id,
+            "status": status,
+            "wid": wallet_id,
+            "key": uuid.uuid4().hex,
+            "hash": "h" * 64,
+        },
     )
     return txn_id
 
@@ -105,16 +114,13 @@ def insert_audit_row(conn, user_id):
 
 # ---------- the real migrations ----------
 
+
 def test_real_migrations_create_all_tables_and_triggers(migrated_engine):
     with migrated_engine.connect() as conn:
         tables = set(
-            conn.scalars(
-                text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
-            )
+            conn.scalars(text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'"))
         )
-        triggers = set(
-            conn.scalars(text("SELECT tgname FROM pg_trigger WHERE NOT tgisinternal"))
-        )
+        triggers = set(conn.scalars(text("SELECT tgname FROM pg_trigger WHERE NOT tgisinternal")))
 
     assert {"users", "wallets", "transactions", "ledger_entries", "audit_logs"} <= tables
     assert {
@@ -129,12 +135,11 @@ def test_real_migrations_keep_the_database_level_money_constraints(conn):
     user_id, wallet_id = insert_user_wallet(conn)
 
     with pytest.raises(IntegrityError, match="ck_wallets_balance_non_negative"):
-        conn.execute(
-            text("UPDATE wallets SET balance = -1 WHERE id = :id"), {"id": wallet_id}
-        )
+        conn.execute(text("UPDATE wallets SET balance = -1 WHERE id = :id"), {"id": wallet_id})
 
 
 # ---------- normal writes still work ----------
+
 
 def test_inserts_are_allowed_everywhere(conn):
     user_id, wallet_id = insert_user_wallet(conn)
@@ -164,14 +169,13 @@ def test_a_pending_transaction_can_still_be_updated(conn):
 
 # ---------- forbidden changes ----------
 
+
 def test_ledger_entries_cannot_be_updated_or_deleted(conn):
     user_id, wallet_id = insert_user_wallet(conn)
     entry_id = insert_ledger_entry(conn, insert_transaction(conn, user_id, wallet_id), wallet_id)
 
     with pytest.raises(IntegrityError, match="rows are immutable"):
-        conn.execute(
-            text("UPDATE ledger_entries SET amount = 99 WHERE id = :id"), {"id": entry_id}
-        )
+        conn.execute(text("UPDATE ledger_entries SET amount = 99 WHERE id = :id"), {"id": entry_id})
 
 
 def test_ledger_entry_delete_is_rejected(conn):
@@ -205,9 +209,7 @@ def test_a_completed_transaction_cannot_be_updated(conn):
     txn_id = insert_transaction(conn, user_id, wallet_id, status="completed")
 
     with pytest.raises(IntegrityError, match="completed transactions"):
-        conn.execute(
-            text("UPDATE transactions SET amount = 99 WHERE id = :id"), {"id": txn_id}
-        )
+        conn.execute(text("UPDATE transactions SET amount = 99 WHERE id = :id"), {"id": txn_id})
 
 
 def test_a_completed_transaction_cannot_be_marked_reversed_in_place(conn):

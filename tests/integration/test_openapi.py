@@ -1,4 +1,5 @@
 """The generated OpenAPI schema is complete, and matches real behavior."""
+
 import pytest
 
 

@@ -6,9 +6,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /code
 
-# Copy requirements first so Docker can cache the install layer
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy requirements first so Docker can cache the install layer.
+# This is the DEVELOPMENT image: it includes test and lint tools.
+# A production image would install only requirements.txt.
+COPY requirements.txt requirements-dev.txt ./
+RUN pip install --no-cache-dir -r requirements-dev.txt
 
 COPY . .
 

@@ -1,4 +1,5 @@
 """Database access for audit logs. Append-only: there is no update or delete."""
+
 from sqlalchemy.orm import Session
 
 from app.models.audit_log import AuditLog

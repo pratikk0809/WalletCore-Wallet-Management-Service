@@ -1,4 +1,5 @@
 """Rate-limit dependencies. Add one to a route with `dependencies=[Depends(...)]`."""
+
 import logging
 
 from fastapi import Depends
@@ -18,9 +19,7 @@ def _enforce(bucket: str, key: str, limit: int) -> None:
     settings = get_settings()
     if not settings.rate_limit_enabled:
         return
-    retry_after = rate_limiter.hit(
-        f"{bucket}:{key}", limit, settings.rate_limit_window_seconds
-    )
+    retry_after = rate_limiter.hit(f"{bucket}:{key}", limit, settings.rate_limit_window_seconds)
     if retry_after is not None:
         # The key (an IP or user ID) is deliberately not logged.
         logger.warning("rate_limited", extra={"bucket": bucket, "retry_after": retry_after})

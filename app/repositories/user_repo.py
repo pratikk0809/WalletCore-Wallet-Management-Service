@@ -1,4 +1,5 @@
 """Database access for users. No business rules here."""
+
 import uuid
 
 from sqlalchemy import select

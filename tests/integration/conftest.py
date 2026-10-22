@@ -3,6 +3,7 @@
 They use a SEPARATE database (<your db name>_test) in the same Postgres server,
 so your development data is never touched.
 """
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
@@ -11,9 +12,9 @@ from sqlalchemy.orm import sessionmaker
 
 from app.api.deps import get_db
 from app.core.config import get_settings
+from app.core.rate_limit import rate_limiter
 from app.main import app
 from app.models import Base
-from app.core.rate_limit import rate_limiter
 
 settings = get_settings()
 _dev_url = make_url(settings.database_url)
@@ -68,8 +69,6 @@ def client(engine):
         yield test_client
 
     app.dependency_overrides.clear()
-
-
 
 
 @pytest.fixture(autouse=True)

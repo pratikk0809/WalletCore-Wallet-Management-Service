@@ -4,6 +4,7 @@ We store these as plain strings in the DB (not native Postgres ENUMs),
 because adding a value to a native ENUM later is painful in migrations.
 A CHECK constraint on each column keeps the values valid.
 """
+
 from enum import StrEnum
 
 
@@ -36,8 +37,9 @@ class TransactionStatus(StrEnum):
 
 
 class LedgerDirection(StrEnum):
-    DEBIT = "debit"    # money leaves the wallet
+    DEBIT = "debit"  # money leaves the wallet
     CREDIT = "credit"  # money enters the wallet
+
 
 class AuditAction(StrEnum):
     USER_REGISTERED = "user_registered"

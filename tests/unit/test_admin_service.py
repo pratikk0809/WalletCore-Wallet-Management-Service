@@ -1,4 +1,5 @@
 """Unit tests for AdminService and the admin dependency (mocked, no database)."""
+
 import uuid
 from decimal import Decimal
 from unittest.mock import MagicMock
@@ -45,12 +46,17 @@ def service(db, wallet_repo, audit):
 
 def make_wallet(status: str = "active") -> Wallet:
     return Wallet(
-        id=uuid.uuid4(), user_id=uuid.uuid4(), currency="INR",
-        balance=Decimal("10.00"), status=status, version=1,
+        id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        currency="INR",
+        balance=Decimal("10.00"),
+        status=status,
+        version=1,
     )
 
 
 # ---------- AdminService ----------
+
 
 def test_freezing_an_active_wallet_changes_it_and_audits_before_committing(
     service, wallet_repo, audit, calls
@@ -87,9 +93,7 @@ def test_unfreezing_a_frozen_wallet(service, wallet_repo, audit):
 
 
 @pytest.mark.parametrize("status, frozen", [("frozen", True), ("active", False)])
-def test_repeating_the_same_change_does_nothing(
-    service, db, wallet_repo, audit, status, frozen
-):
+def test_repeating_the_same_change_does_nothing(service, db, wallet_repo, audit, status, frozen):
     wallet = make_wallet(status)
     wallet_repo.get_by_id_for_update.return_value = wallet
 
@@ -111,12 +115,8 @@ def test_unknown_wallet_raises_not_found(service, db, wallet_repo, audit):
     db.commit.assert_not_called()
 
 
-@pytest.mark.parametrize(
-    "given, stored", [("  fraud  ", "fraud"), ("   ", None), (None, None)]
-)
-def test_reason_is_trimmed_and_blank_becomes_none(
-    service, wallet_repo, audit, given, stored
-):
+@pytest.mark.parametrize("given, stored", [("  fraud  ", "fraud"), ("   ", None), (None, None)])
+def test_reason_is_trimmed_and_blank_becomes_none(service, wallet_repo, audit, given, stored):
     wallet_repo.get_by_id_for_update.return_value = make_wallet("active")
 
     service.set_wallet_frozen(uuid.uuid4(), uuid.uuid4(), True, given)
@@ -125,6 +125,7 @@ def test_reason_is_trimmed_and_blank_becomes_none(
 
 
 # ---------- get_current_admin ----------
+
 
 def test_admin_user_passes_the_admin_check():
     admin = User(id=uuid.uuid4(), email="a@example.com", password_hash="x", role="admin")

@@ -1,4 +1,5 @@
 """Unit tests for the documented error responses (no database)."""
+
 import pytest
 
 from app.api.responses import errors

@@ -1,4 +1,5 @@
 """Integration tests for the audit_logs table (real PostgreSQL)."""
+
 import uuid
 from decimal import Decimal
 

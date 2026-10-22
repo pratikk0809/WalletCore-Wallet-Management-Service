@@ -1,4 +1,5 @@
 """Request/response shapes for money endpoints."""
+
 import uuid
 from datetime import datetime
 from decimal import Decimal
@@ -21,7 +22,9 @@ _TRANSACTION_EXAMPLE = {
 class DepositRequest(BaseModel):
     # Parsed as Decimal (never float). The service enforces the real rules
     # (positive, limits, 2 decimal places) so they live in one place.
-    amount: Decimal = Field(examples=["250.75"], description="At most 2 decimals, sent as a string.")
+    amount: Decimal = Field(
+        examples=["250.75"], description="At most 2 decimals, sent as a string."
+    )
     reference: str | None = Field(default=None, max_length=255, examples=["first top-up"])
 
 

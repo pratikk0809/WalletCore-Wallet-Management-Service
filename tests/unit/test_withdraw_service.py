@@ -1,4 +1,5 @@
 """Unit tests for TransactionService.withdraw. Repositories and DB are mocked."""
+
 import uuid
 from decimal import Decimal
 from unittest.mock import MagicMock
@@ -39,6 +40,7 @@ def txn_repo():
 @pytest.fixture
 def ledger_repo():
     return MagicMock()
+
 
 @pytest.fixture
 def limit_service():
@@ -129,9 +131,7 @@ def test_withdrawing_the_exact_balance_is_allowed(service, wallet_repo):
     assert wallet.balance == Decimal("0.00")
 
 
-def test_insufficient_funds_raises_and_changes_nothing(
-    service, db, wallet_repo, ledger_repo
-):
+def test_insufficient_funds_raises_and_changes_nothing(service, db, wallet_repo, ledger_repo):
     wallet = make_wallet("20.00")
     wallet_repo.get_by_user_id_for_update.return_value = wallet
 
@@ -172,9 +172,7 @@ def test_replay_returns_original_even_if_balance_is_now_too_low(
     db.commit.assert_not_called()
 
 
-def test_same_key_with_different_amount_raises_conflict(
-    service, db, wallet_repo, txn_repo
-):
+def test_same_key_with_different_amount_raises_conflict(service, db, wallet_repo, txn_repo):
     wallet = make_wallet()
     wallet_repo.get_by_user_id_for_update.return_value = wallet
     txn_repo.get_by_user_and_key.return_value = make_existing(wallet, "30.00")
@@ -191,9 +189,7 @@ def test_key_first_used_for_a_deposit_conflicts_with_a_withdrawal(
     # Same key, same amount, but the type differs -> not a replay.
     wallet = make_wallet()
     wallet_repo.get_by_user_id_for_update.return_value = wallet
-    txn_repo.get_by_user_and_key.return_value = make_existing(
-        wallet, "30.00", txn_type="deposit"
-    )
+    txn_repo.get_by_user_and_key.return_value = make_existing(wallet, "30.00", txn_type="deposit")
 
     with pytest.raises(DuplicateTransactionError):
         service.withdraw(wallet.user_id, "key-1", Decimal("30.00"))

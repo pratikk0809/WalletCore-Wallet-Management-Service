@@ -1,4 +1,5 @@
 """Global exception handlers: turn exceptions into the standard error JSON."""
+
 import logging
 from typing import Any
 
@@ -74,9 +75,7 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     )
 
 
-async def request_validation_handler(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
+async def request_validation_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     """FastAPI/Pydantic rejected the request body or params (HTTP 422)."""
     # We list only field name + message. We deliberately do NOT echo the
     # submitted values back (they could contain passwords).
@@ -94,14 +93,10 @@ async def request_validation_handler(
             "request_id": getattr(request.state, "request_id", None),
         },
     )
-    return _error_response(
-        request, 422, "VALIDATION_ERROR", "Request validation failed.", details
-    )
+    return _error_response(request, 422, "VALIDATION_ERROR", "Request validation failed.", details)
 
 
-async def http_exception_handler(
-    request: Request, exc: StarletteHTTPException
-) -> JSONResponse:
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     """Framework errors like 404 (unknown URL) or 405 (wrong method)."""
     code = _HTTP_CODES.get(exc.status_code, "HTTP_ERROR")
     return _error_response(request, exc.status_code, code, str(exc.detail))
@@ -117,9 +112,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
             "request_id": getattr(request.state, "request_id", None),
         },
     )
-    return _error_response(
-        request, 500, "INTERNAL_ERROR", "An unexpected error occurred."
-    )
+    return _error_response(request, 500, "INTERNAL_ERROR", "An unexpected error occurred.")
 
 
 def register_exception_handlers(app: FastAPI) -> None:

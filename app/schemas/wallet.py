@@ -1,4 +1,5 @@
 """Response shapes for wallet endpoints."""
+
 import uuid
 from datetime import datetime
 from decimal import Decimal

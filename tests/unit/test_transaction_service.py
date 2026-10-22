@@ -1,4 +1,5 @@
 """Unit tests for TransactionService.deposit. Repositories and DB are mocked."""
+
 import uuid
 from decimal import Decimal
 from unittest.mock import MagicMock
@@ -38,6 +39,7 @@ def txn_repo():
 @pytest.fixture
 def ledger_repo():
     return MagicMock()
+
 
 @pytest.fixture
 def limit_service():
@@ -116,9 +118,7 @@ def test_deposit_commits_once_and_is_marked_completed(service, db, wallet_repo, 
     db.commit.assert_called_once()
 
 
-def test_replay_returns_original_without_writing(
-    service, db, wallet_repo, txn_repo, ledger_repo
-):
+def test_replay_returns_original_without_writing(service, db, wallet_repo, txn_repo, ledger_repo):
     wallet = make_wallet("20.00")
     wallet_repo.get_by_user_id_for_update.return_value = wallet
     existing = make_existing(wallet)
@@ -133,9 +133,7 @@ def test_replay_returns_original_without_writing(
     db.commit.assert_not_called()
 
 
-def test_same_key_with_different_amount_raises_conflict(
-    service, db, wallet_repo, txn_repo
-):
+def test_same_key_with_different_amount_raises_conflict(service, db, wallet_repo, txn_repo):
     wallet = make_wallet()
     wallet_repo.get_by_user_id_for_update.return_value = wallet
     txn_repo.get_by_user_and_key.return_value = make_existing(wallet, "10.00")

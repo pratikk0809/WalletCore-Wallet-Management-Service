@@ -1,4 +1,5 @@
 """Money validation helpers. Pure functions: no database, no FastAPI."""
+
 from decimal import Decimal, InvalidOperation
 
 from app.core.config import get_settings
@@ -21,17 +22,13 @@ def validate_amount(
     Raises ValidationError (HTTP 422) on any violation.
     """
     settings = get_settings()
-    min_amount = Decimal(
-        settings.min_transaction_amount if min_amount is None else min_amount
-    )
-    max_amount = Decimal(
-        settings.max_transaction_amount if max_amount is None else max_amount
-    )
+    min_amount = Decimal(settings.min_transaction_amount if min_amount is None else min_amount)
+    max_amount = Decimal(settings.max_transaction_amount if max_amount is None else max_amount)
 
     # 1. Type: floats are inexact, and bool is a subclass of int, so reject both.
     if isinstance(value, float):
         raise ValidationError(
-            "Amount must be sent as a decimal string (e.g. \"10.50\"), not a float."
+            'Amount must be sent as a decimal string (e.g. "10.50"), not a float.'
         )
     if isinstance(value, bool) or not isinstance(value, (Decimal, int, str)):
         raise ValidationError("Amount must be a valid decimal number.")

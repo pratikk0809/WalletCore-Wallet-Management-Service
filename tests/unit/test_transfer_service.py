@@ -1,4 +1,5 @@
 """Unit tests for TransactionService.transfer. Repositories and DB are mocked."""
+
 import uuid
 from decimal import Decimal
 from unittest.mock import MagicMock
@@ -85,9 +86,7 @@ def make_existing(source: Wallet, destination: Wallet, amount: str = "30.00"):
         source_wallet_id=source.id,
         destination_wallet_id=destination.id,
         idempotency_key="key-1",
-        request_hash=compute_request_hash(
-            "transfer", value, None, destination=str(destination.id)
-        ),
+        request_hash=compute_request_hash("transfer", value, None, destination=str(destination.id)),
     )
 
 
@@ -118,9 +117,7 @@ def test_transfer_writes_balanced_ledger_entries(service, pair, ledger_repo):
 def test_transfer_commits_once_and_sets_both_wallets(service, db, pair, wallet_repo):
     source, destination = pair
 
-    result = service.transfer(
-        source.user_id, "key-1", destination.id, Decimal("30.00"), " rent "
-    )
+    result = service.transfer(source.user_id, "key-1", destination.id, Decimal("30.00"), " rent ")
 
     assert result.created is True
     assert result.transaction.type == "transfer"
@@ -225,9 +222,7 @@ def test_different_currencies_are_rejected(service, db, pair):
     db.commit.assert_not_called()
 
 
-def test_replay_returns_original_without_writing(
-    service, db, pair, txn_repo, ledger_repo
-):
+def test_replay_returns_original_without_writing(service, db, pair, txn_repo, ledger_repo):
     source, destination = pair
     existing = make_existing(source, destination)
     txn_repo.get_by_user_and_key.return_value = existing

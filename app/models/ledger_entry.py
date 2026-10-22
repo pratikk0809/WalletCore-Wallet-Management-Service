@@ -1,4 +1,5 @@
 """LedgerEntry model: one line of the double-entry ledger. Append-only."""
+
 import uuid
 from datetime import datetime
 from decimal import Decimal

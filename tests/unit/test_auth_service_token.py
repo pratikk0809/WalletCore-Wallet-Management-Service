@@ -1,4 +1,5 @@
 """Unit tests for AuthService.get_user_from_token (mocked repositories)."""
+
 import uuid
 from datetime import timedelta
 from unittest.mock import MagicMock

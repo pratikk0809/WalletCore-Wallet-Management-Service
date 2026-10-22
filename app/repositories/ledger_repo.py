@@ -1,4 +1,5 @@
 """Database access for ledger entries. Append-only: there is no update or delete."""
+
 import uuid
 from collections.abc import Sequence
 from datetime import datetime
@@ -16,8 +17,8 @@ from app.models.transaction import Transaction
 
 class PeriodTotals(NamedTuple):
     credits: Decimal  # total money in during the period
-    debits: Decimal   # total money out during the period
-    count: int        # number of entries in the period
+    debits: Decimal  # total money out during the period
+    count: int  # number of entries in the period
 
 
 class LedgerRepository:
@@ -29,9 +30,7 @@ class LedgerRepository:
         self.db.add_all(entries)
         self.db.flush()
 
-    def last_balance_before(
-        self, wallet_id: uuid.UUID, before: datetime
-    ) -> Decimal | None:
+    def last_balance_before(self, wallet_id: uuid.UUID, before: datetime) -> Decimal | None:
         """The wallet balance right after its latest entry older than `before`.
         None if the wallet has no entries before that moment."""
         return self.db.scalar(
@@ -41,9 +40,7 @@ class LedgerRepository:
             .limit(1)
         )
 
-    def totals_between(
-        self, wallet_id: uuid.UUID, start: datetime, end: datetime
-    ) -> PeriodTotals:
+    def totals_between(self, wallet_id: uuid.UUID, start: datetime, end: datetime) -> PeriodTotals:
         """Credits, debits and entry count for entries in [start, end)."""
         credits = func.coalesce(
             func.sum(

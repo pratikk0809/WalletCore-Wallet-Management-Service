@@ -1,5 +1,6 @@
 """The DATABASE itself must reject invalid transactions and ledger entries,
 even if a bug in our Python code tried to create them."""
+
 import uuid
 from decimal import Decimal
 
@@ -134,12 +135,20 @@ def test_ledger_external_and_wallet_entries_are_accepted(db):
     db.add_all(
         [
             LedgerEntry(  # wallet side: credit, with balance snapshot
-                id=uuid.uuid4(), transaction_id=txn.id, wallet_id=wallet.id,
-                direction="credit", amount=Decimal("10.00"), balance_after=Decimal("10.00"),
+                id=uuid.uuid4(),
+                transaction_id=txn.id,
+                wallet_id=wallet.id,
+                direction="credit",
+                amount=Decimal("10.00"),
+                balance_after=Decimal("10.00"),
             ),
             LedgerEntry(  # external side: debit, no wallet, no balance
-                id=uuid.uuid4(), transaction_id=txn.id, wallet_id=None,
-                direction="debit", amount=Decimal("10.00"), balance_after=None,
+                id=uuid.uuid4(),
+                transaction_id=txn.id,
+                wallet_id=None,
+                direction="debit",
+                amount=Decimal("10.00"),
+                balance_after=None,
             ),
         ]
     )

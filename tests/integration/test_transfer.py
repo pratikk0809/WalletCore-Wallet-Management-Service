@@ -1,4 +1,5 @@
 """Integration tests for POST /transfers against a real PostgreSQL database."""
+
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 
@@ -105,8 +106,8 @@ def test_transfer_ledger_is_balanced_and_every_wallet_reconciles(client, engine)
     assert [e.direction for e in entries] == ["credit", "debit"]
     assert entries[0].amount == entries[1].amount == Decimal("40.00")
     assert all(e.wallet_id is not None for e in entries)  # no external side
-    assert entries[0].balance_after == Decimal("60.00")   # bob: 20 + 40
-    assert entries[1].balance_after == Decimal("60.00")   # alice: 100 - 40
+    assert entries[0].balance_after == Decimal("60.00")  # bob: 20 + 40
+    assert entries[1].balance_after == Decimal("60.00")  # alice: 100 - 40
     assert all(w.balance == w.ledger_total for w in wallets)
 
 
@@ -124,9 +125,7 @@ def test_replay_returns_original_and_transfers_once(client, engine):
     assert balance(client, alice) == "70.00"  # NOT 40.00
     assert balance(client, bob) == "30.00"
     with engine.connect() as conn:
-        assert conn.scalar(
-            text("SELECT count(*) FROM transactions WHERE type = 'transfer'")
-        ) == 1
+        assert conn.scalar(text("SELECT count(*) FROM transactions WHERE type = 'transfer'")) == 1
 
 
 def test_same_key_with_different_amount_returns_409(client):
@@ -183,9 +182,7 @@ def test_insufficient_funds_returns_422_and_stores_nothing(client, engine):
     assert response.json()["error"]["code"] == "INSUFFICIENT_FUNDS"
     assert balance(client, alice) == "50.00" and balance(client, bob) == "0.00"
     with engine.connect() as conn:
-        assert conn.scalar(
-            text("SELECT count(*) FROM transactions WHERE type = 'transfer'")
-        ) == 0
+        assert conn.scalar(text("SELECT count(*) FROM transactions WHERE type = 'transfer'")) == 0
 
 
 def test_frozen_sender_returns_403(client, engine):
@@ -286,6 +283,7 @@ def test_invalid_amounts_return_422_and_change_nothing(client, amount):
 
 
 # ---------- concurrency ----------
+
 
 def test_parallel_transfers_can_never_overdraw(client):
     """Balance 100, five parallel transfers of 30: only three can succeed."""

@@ -1,4 +1,5 @@
 """Business logic for registration, login and token authentication. Never imports FastAPI."""
+
 import logging
 import uuid
 
@@ -52,12 +53,8 @@ class AuthService:
             logger.warning("register_email_taken")
             raise EmailAlreadyRegisteredError()
 
-        user = User(
-            id=uuid.uuid4(), email=email, password_hash=hash_password(password)
-        )
-        wallet = Wallet(
-            id=uuid.uuid4(), user_id=user.id, currency=settings.default_currency
-        )
+        user = User(id=uuid.uuid4(), email=email, password_hash=hash_password(password))
+        wallet = Wallet(id=uuid.uuid4(), user_id=user.id, currency=settings.default_currency)
 
         try:
             self.user_repo.add(user)
@@ -112,9 +109,7 @@ class AuthService:
         logger.info("login_succeeded", extra={"user_id": str(user.id)})
         return create_access_token(str(user.id))
 
-    def _login_failed(
-        self, user: User | None, reason: str, message: str
-    ) -> AuthenticationError:
+    def _login_failed(self, user: User | None, reason: str, message: str) -> AuthenticationError:
         """Audit a failed login and return the error for the caller to raise.
 
         Nothing else is being saved, so we commit the audit row ourselves;

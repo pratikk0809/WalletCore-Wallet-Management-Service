@@ -1,4 +1,5 @@
 """Import every model here so Alembic autogenerate can see them."""
+
 from app.models.audit_log import AuditLog
 from app.models.base import Base
 from app.models.ledger_entry import LedgerEntry

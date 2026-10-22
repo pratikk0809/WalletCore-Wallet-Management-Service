@@ -1,4 +1,5 @@
 """Integration tests for POST /wallets/withdraw against a real PostgreSQL database."""
+
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 
@@ -126,9 +127,7 @@ def test_replay_returns_original_and_withdraws_once(client, engine):
     assert balance(client, headers) == "70.00"  # NOT 40.00
 
     with engine.connect() as conn:
-        assert conn.scalar(
-            text("SELECT count(*) FROM transactions WHERE type = 'withdrawal'")
-        ) == 1
+        assert conn.scalar(text("SELECT count(*) FROM transactions WHERE type = 'withdrawal'")) == 1
 
 
 def test_same_key_with_different_amount_returns_409(client):

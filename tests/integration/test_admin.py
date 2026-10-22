@@ -1,4 +1,5 @@
 """Integration tests for POST /admin/wallets/{id}/freeze (real PostgreSQL)."""
+
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -10,12 +11,12 @@ ZERO_UUID = "00000000-0000-4000-8000-000000000000"
 
 def make_user(client, email):
     """Register + login. Returns (auth headers, user id, wallet id)."""
-    user_id = client.post(
-        "/auth/register", json={"email": email, "password": PASSWORD}
-    ).json()["id"]
-    token = client.post(
-        "/auth/login", data={"username": email, "password": PASSWORD}
-    ).json()["access_token"]
+    user_id = client.post("/auth/register", json={"email": email, "password": PASSWORD}).json()[
+        "id"
+    ]
+    token = client.post("/auth/login", data={"username": email, "password": PASSWORD}).json()[
+        "access_token"
+    ]
     headers = {"Authorization": f"Bearer {token}"}
     wallet_id = client.get("/wallets/me", headers=headers).json()["id"]
     return headers, user_id, wallet_id
@@ -83,6 +84,7 @@ def admin(client, engine):
 
 # ---------- access control ----------
 
+
 def test_a_normal_user_gets_403_and_nothing_changes(client, engine):
     alice, _, alice_wallet = make_user(client, "alice@example.com")
     bob, _, _ = make_user(client, "bob@example.com")
@@ -96,13 +98,12 @@ def test_a_normal_user_gets_403_and_nothing_changes(client, engine):
 
 
 def test_freeze_requires_login(client):
-    response = client.post(
-        f"/admin/wallets/{ZERO_UUID}/freeze", json={"frozen": True}
-    )
+    response = client.post(f"/admin/wallets/{ZERO_UUID}/freeze", json={"frozen": True})
     assert response.status_code == 401
 
 
 # ---------- freeze / unfreeze ----------
+
 
 def test_admin_can_freeze_a_wallet_and_the_owner_can_still_read_it(client, admin):
     admin_headers, _ = admin
@@ -163,9 +164,7 @@ def test_unfreezing_restores_normal_operation(client, admin):
     assert deposit(client, bob, "10.00", "d1").status_code == 201
 
 
-def test_repeating_a_freeze_changes_nothing_and_writes_one_audit_row(
-    client, admin, engine
-):
+def test_repeating_a_freeze_changes_nothing_and_writes_one_audit_row(client, admin, engine):
     admin_headers, _ = admin
     _, _, bob_wallet = make_user(client, "bob@example.com")
 
@@ -178,6 +177,7 @@ def test_repeating_a_freeze_changes_nothing_and_writes_one_audit_row(
 
 
 # ---------- request errors ----------
+
 
 def test_unknown_wallet_returns_404(client, admin):
     admin_headers, _ = admin
@@ -197,9 +197,9 @@ def test_malformed_wallet_id_returns_422(client, admin):
 @pytest.mark.parametrize(
     "body",
     [
-        {},                                  # frozen is required
-        {"frozen": "yes"},                   # not a real boolean
-        {"frozen": 1},                       # numbers are not accepted either
+        {},  # frozen is required
+        {"frozen": "yes"},  # not a real boolean
+        {"frozen": 1},  # numbers are not accepted either
         {"frozen": True, "reason": "x" * 256},  # reason too long
     ],
 )
@@ -207,9 +207,7 @@ def test_invalid_bodies_return_422_and_change_nothing(client, admin, body):
     admin_headers, _ = admin
     bob, _, bob_wallet = make_user(client, "bob@example.com")
 
-    response = client.post(
-        f"/admin/wallets/{bob_wallet}/freeze", json=body, headers=admin_headers
-    )
+    response = client.post(f"/admin/wallets/{bob_wallet}/freeze", json=body, headers=admin_headers)
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
@@ -217,6 +215,7 @@ def test_invalid_bodies_return_422_and_change_nothing(client, admin, body):
 
 
 # ---------- audit trail ----------
+
 
 def test_freeze_writes_an_audit_row_with_admin_wallet_and_reason(client, admin, engine):
     admin_headers, admin_id = admin
@@ -253,9 +252,8 @@ def test_unfreeze_writes_a_wallet_unfrozen_row(client, admin, engine):
 
 # ---------- concurrency ----------
 
-def test_parallel_freezes_change_the_wallet_once_and_write_one_audit_row(
-    client, admin, engine
-):
+
+def test_parallel_freezes_change_the_wallet_once_and_write_one_audit_row(client, admin, engine):
     admin_headers, _ = admin
     _, _, bob_wallet = make_user(client, "bob@example.com")
 

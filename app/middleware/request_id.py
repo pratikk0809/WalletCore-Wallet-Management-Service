@@ -1,4 +1,5 @@
 """Middleware: assigns a request ID, records the client IP, logs each request, adds the X-Request-ID header."""
+
 import logging
 import re
 import time
@@ -34,9 +35,7 @@ def _get_client_ip(request: Request) -> str | None:
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         request_id = _get_request_id(request.headers.get("X-Request-ID"))
 
         # Two places: request.state (for exception handlers) and the

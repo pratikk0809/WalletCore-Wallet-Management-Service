@@ -1,4 +1,5 @@
 """Auth endpoints. HTTP only: parse the request, call the service, return the response."""
+
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -19,7 +20,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     summary="Create an account",
     dependencies=[Depends(limit_register)],
     responses=errors(
-        409, 422, 429,
+        409,
+        422,
+        429,
         custom={
             409: (
                 "Email already registered.",
@@ -29,9 +32,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
         },
     ),
 )
-def register(
-    body: RegisterRequest, service: AuthService = Depends(get_auth_service)
-) -> User:
+def register(body: RegisterRequest, service: AuthService = Depends(get_auth_service)) -> User:
     """Create an account and its wallet (balance 0.00 INR). Rate limited per IP."""
     return service.register(body.email, body.password)
 
@@ -42,7 +43,9 @@ def register(
     summary="Log in",
     dependencies=[Depends(limit_login)],
     responses=errors(
-        401, 422, 429,
+        401,
+        422,
+        429,
         custom={
             401: (
                 "Wrong email or password, or a disabled account.",

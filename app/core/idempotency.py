@@ -1,4 +1,5 @@
 """Request fingerprinting for idempotency. Pure function: no DB, no FastAPI."""
+
 import hashlib
 import json
 from decimal import Decimal

@@ -26,10 +26,19 @@ Over the limit you get `429` with a `Retry-After` header.
 TAGS = [
     {"name": "health", "description": "Liveness and database connectivity check."},
     {"name": "auth", "description": "Create an account (with its wallet) and log in."},
-    {"name": "wallets", "description": "Your wallet: balance, daily limit, statement, deposit and withdraw."},
+    {
+        "name": "wallets",
+        "description": "Your wallet: balance, daily limit, statement, deposit and withdraw.",
+    },
     {"name": "transfers", "description": "Send money to another wallet, by wallet ID."},
-    {"name": "transactions", "description": "Your transaction history (cursor pagination) and details."},
-    {"name": "admin", "description": "Admin only: freeze or unfreeze wallets. Returns 403 for normal users."},
+    {
+        "name": "transactions",
+        "description": "Your transaction history (cursor pagination) and details.",
+    },
+    {
+        "name": "admin",
+        "description": "Admin only: freeze or unfreeze wallets. Returns 403 for normal users.",
+    },
 ]
 
 

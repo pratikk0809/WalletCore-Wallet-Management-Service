@@ -1,4 +1,5 @@
 """Admin endpoints. HTTP only: parse, call the service, return."""
+
 import uuid
 
 from fastapi import APIRouter, Depends
@@ -17,7 +18,10 @@ router = APIRouter(prefix="/admin", tags=["admin"])
     response_model=AdminWalletResponse,
     summary="Freeze or unfreeze a wallet",
     responses=errors(
-        401, 403, 404, 422,
+        401,
+        403,
+        404,
+        422,
         custom={
             403: ("The caller is not an admin.", "FORBIDDEN", "Admin access required."),
             404: ("No wallet with this ID.", "WALLET_NOT_FOUND", "Wallet not found."),

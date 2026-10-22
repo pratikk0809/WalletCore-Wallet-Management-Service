@@ -1,4 +1,5 @@
 """Integration tests for the daily limit, using a real PostgreSQL database."""
+
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 

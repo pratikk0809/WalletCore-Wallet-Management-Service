@@ -1,5 +1,6 @@
 """Documented error responses for the OpenAPI schema. Documentation only: nothing here
 changes behavior."""
+
 from typing import Any
 
 from app.schemas.errors import ErrorResponse

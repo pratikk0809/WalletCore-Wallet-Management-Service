@@ -1,4 +1,5 @@
 """Unit tests for the docs switch (no database)."""
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -8,14 +9,18 @@ from app.core.openapi import docs_urls
 
 def test_docs_are_on_locally():
     assert docs_urls("local") == {
-        "docs_url": "/docs", "redoc_url": "/redoc", "openapi_url": "/openapi.json",
+        "docs_url": "/docs",
+        "redoc_url": "/redoc",
+        "openapi_url": "/openapi.json",
     }
 
 
 @pytest.mark.parametrize("environment", ["production", "staging", ""])
 def test_docs_are_off_everywhere_else(environment):
     assert docs_urls(environment) == {
-        "docs_url": None, "redoc_url": None, "openapi_url": None,
+        "docs_url": None,
+        "redoc_url": None,
+        "openapi_url": None,
     }
 
 

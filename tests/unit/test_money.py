@@ -1,4 +1,5 @@
 """Unit tests for app/core/money.py (no database needed)."""
+
 from decimal import Decimal
 
 import pytest
@@ -18,16 +19,17 @@ def check(value):
 
 # ---------- accepted values (and how they are normalized) ----------
 
+
 @pytest.mark.parametrize(
     "value, expected",
     [
         ("10", "10.00"),
         ("10.5", "10.50"),
         ("10.50", "10.50"),
-        ("10.500", "10.50"),   # trailing zero is harmless
+        ("10.500", "10.50"),  # trailing zero is harmless
         (Decimal("0.01"), "0.01"),
         (5, "5.00"),
-        ("1E+2", "100.00"),    # scientific notation
+        ("1E+2", "100.00"),  # scientific notation
     ],
 )
 def test_valid_amounts_are_normalized_to_two_places(value, expected):
@@ -38,22 +40,23 @@ def test_valid_amounts_are_normalized_to_two_places(value, expected):
 
 # ---------- rejected values ----------
 
+
 @pytest.mark.parametrize(
     "value",
     [
         "0",
         "-5",
         "0.00",
-        "10.001",       # 3 decimal places
+        "10.001",  # 3 decimal places
         "abc",
         "",
         "NaN",
         "Infinity",
         "-Infinity",
-        10.5,           # float
-        True,           # bool is technically an int
+        10.5,  # float
+        True,  # bool is technically an int
         None,
-        "100000.01",    # above max
+        "100000.01",  # above max
     ],
 )
 def test_invalid_amounts_are_rejected(value):
@@ -62,6 +65,7 @@ def test_invalid_amounts_are_rejected(value):
 
 
 # ---------- boundaries and messages ----------
+
 
 def test_minimum_boundary_is_accepted():
     assert check("0.01") == Decimal("0.01")

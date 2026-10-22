@@ -1,0 +1,28 @@
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+extend-exclude = "alembic/versions"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+# E/F = pycodestyle and pyflakes, I = import sorting, B = likely bugs
+select = ["E", "F", "I", "B"]
+ignore = [
+    "E501",  # line length is black's job
+    "E741",  # short names like `l` in comprehensions are fine here
+    "B008",  # FastAPI's Depends(...) in argument defaults is the normal pattern
+    "B904",  # services re-raise our own errors inside except blocks on purpose
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "tests"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E402"]  # the integration conftest imports below its fixtures
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

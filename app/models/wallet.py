@@ -1,4 +1,5 @@
 """Wallet model."""
+
 import uuid
 from datetime import datetime
 from decimal import Decimal
@@ -51,9 +52,7 @@ class Wallet(Base):
     )
 
     # For optional optimistic locking later (Phase 4/6).
-    version: Mapped[int] = mapped_column(
-        Integer, default=1, server_default="1", nullable=False
-    )
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

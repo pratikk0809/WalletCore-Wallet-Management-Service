@@ -1,4 +1,5 @@
 """JSON logging setup. Every log line is one JSON object including the request ID."""
+
 import json
 import logging
 import sys
@@ -10,9 +11,10 @@ request_id_ctx: ContextVar[str | None] = ContextVar("request_id", default=None)
 
 # Attributes every LogRecord already has. Anything else was passed via `extra={...}`
 # and should be included in the JSON output.
-_STANDARD_ATTRS = set(
-    logging.LogRecord("", 0, "", 0, "", (), None).__dict__
-) | {"message", "asctime"}
+_STANDARD_ATTRS = set(logging.LogRecord("", 0, "", 0, "", (), None).__dict__) | {
+    "message",
+    "asctime",
+}
 
 
 class JsonFormatter(logging.Formatter):
@@ -20,9 +22,7 @@ class JsonFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         payload = {
-            "timestamp": datetime.fromtimestamp(
-                record.created, tz=timezone.utc
-            ).isoformat(),
+            "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),

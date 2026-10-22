@@ -1,4 +1,5 @@
 """Integration tests: which actions produce audit rows (real PostgreSQL)."""
+
 from concurrent.futures import ThreadPoolExecutor
 
 from sqlalchemy import text
@@ -8,12 +9,12 @@ PASSWORD = "S3cret!pass"
 
 def make_user(client, email):
     """Register + login. Returns (auth headers, user id, wallet id)."""
-    user_id = client.post(
-        "/auth/register", json={"email": email, "password": PASSWORD}
-    ).json()["id"]
-    token = client.post(
-        "/auth/login", data={"username": email, "password": PASSWORD}
-    ).json()["access_token"]
+    user_id = client.post("/auth/register", json={"email": email, "password": PASSWORD}).json()[
+        "id"
+    ]
+    token = client.post("/auth/login", data={"username": email, "password": PASSWORD}).json()[
+        "access_token"
+    ]
     headers = {"Authorization": f"Bearer {token}"}
     wallet_id = client.get("/wallets/me", headers=headers).json()["id"]
     return headers, user_id, wallet_id

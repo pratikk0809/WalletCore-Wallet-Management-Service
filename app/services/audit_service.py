@@ -1,4 +1,5 @@
 """Writes audit log entries. Never imports FastAPI, never commits."""
+
 import json
 import uuid
 from typing import Any
@@ -17,9 +18,11 @@ def _redact(value: Any) -> Any:
     """Return a copy of `value` with sensitive keys blanked out (also in nested dicts)."""
     if isinstance(value, dict):
         return {
-            key: _REDACTED
-            if any(word in str(key).lower() for word in _SENSITIVE_WORDS)
-            else _redact(item)
+            key: (
+                _REDACTED
+                if any(word in str(key).lower() for word in _SENSITIVE_WORDS)
+                else _redact(item)
+            )
             for key, item in value.items()
         }
     if isinstance(value, (list, tuple)):

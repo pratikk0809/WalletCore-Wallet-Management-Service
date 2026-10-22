@@ -1,24 +1,22 @@
 """Alembic environment: tells Alembic how to connect to the DB and which models exist."""
+
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
-
-from app.core.config import get_settings
-from app.models.base import Base
 
 # Importing the models package makes sure every model is registered on
 # Base.metadata. Today it's empty; later we'll import each model in
 # app/models/__init__.py so Alembic can see them.
 import app.models  # noqa: F401
+from alembic import context
+from app.core.config import get_settings
+from app.models.base import Base
 
 config = context.config
 
 # Use the same DATABASE_URL as the app (from .env) instead of alembic.ini.
 # "%" must be doubled because Alembic's config treats it as a special character.
-config.set_main_option(
-    "sqlalchemy.url", get_settings().database_url.replace("%", "%%")
-)
+config.set_main_option("sqlalchemy.url", get_settings().database_url.replace("%", "%%"))
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

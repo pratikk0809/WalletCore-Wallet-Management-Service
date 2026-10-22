@@ -1,4 +1,5 @@
 """Integration tests for GET /wallets/me/statement (real PostgreSQL)."""
+
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -105,12 +106,9 @@ def test_statement_lists_own_lines_oldest_first_with_running_balance(client):
     assert body["total_credits"] == "100.00" and body["total_debits"] == "50.00"
     assert body["entry_count"] == 3 and body["truncated"] is False
     # The ledger adds up.
-    assert (
-        Decimal(body["opening_balance"])
-        + Decimal(body["total_credits"])
-        - Decimal(body["total_debits"])
-        == Decimal(body["closing_balance"])
-    )
+    assert Decimal(body["opening_balance"]) + Decimal(body["total_credits"]) - Decimal(
+        body["total_debits"]
+    ) == Decimal(body["closing_balance"])
 
 
 def test_recipient_sees_the_transfer_as_a_credit_and_outsiders_see_nothing(client):
@@ -230,13 +228,15 @@ def test_parallel_deposits_still_show_a_consistent_running_balance(client):
     alice, _ = make_user(client, "alice@example.com")
 
     with ThreadPoolExecutor(max_workers=5) as pool:
-        responses = list(
-            pool.map(lambda i: deposit(client, alice, "10.00", f"k-{i}"), range(5))
-        )
+        responses = list(pool.map(lambda i: deposit(client, alice, "10.00", f"k-{i}"), range(5)))
 
     assert all(r.status_code == 201 for r in responses)
     body = statement(client, alice).json()
     assert [e["balance_after"] for e in body["entries"]] == [
-        "10.00", "20.00", "30.00", "40.00", "50.00",
+        "10.00",
+        "20.00",
+        "30.00",
+        "40.00",
+        "50.00",
     ]
     assert body["closing_balance"] == "50.00"

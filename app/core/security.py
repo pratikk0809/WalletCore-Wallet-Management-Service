@@ -1,4 +1,5 @@
 """Password hashing and JWT helpers. Pure functions: no database, no FastAPI."""
+
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -34,10 +35,10 @@ def create_access_token(subject: str, expires_delta: timedelta | None = None) ->
     now = datetime.now(timezone.utc)
     expires = expires_delta or timedelta(minutes=settings.access_token_expire_minutes)
     payload = {
-        "sub": subject,             # who the token is for
-        "iat": now,                 # issued at
-        "exp": now + expires,       # expiry
-        "jti": uuid.uuid4().hex,    # unique token ID (useful for revocation later)
+        "sub": subject,  # who the token is for
+        "iat": now,  # issued at
+        "exp": now + expires,  # expiry
+        "jti": uuid.uuid4().hex,  # unique token ID (useful for revocation later)
     }
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 
@@ -52,7 +53,7 @@ def decode_access_token(token: str) -> str:
         payload = jwt.decode(
             token,
             settings.secret_key,
-            algorithms=[settings.jwt_algorithm],   # pinned: never trust the token's own "alg"
+            algorithms=[settings.jwt_algorithm],  # pinned: never trust the token's own "alg"
             options={"require": ["exp", "sub"]},
         )
     except jwt.PyJWTError:

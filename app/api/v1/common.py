@@ -1,4 +1,5 @@
 """Pieces shared by the money endpoints (wallets and transfers)."""
+
 from typing import Annotated
 
 from fastapi import Header, Response

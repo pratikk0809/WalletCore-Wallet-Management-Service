@@ -1,4 +1,5 @@
 """Integration tests: real HTTP calls against the app with a real PostgreSQL database."""
+
 import uuid
 from datetime import timedelta
 
@@ -22,6 +23,7 @@ def auth_headers(client, email=EMAIL, password=PASSWORD) -> dict[str, str]:
 
 
 # ---------- register ----------
+
 
 def test_register_returns_201_and_hides_password(client):
     response = register(client)
@@ -51,11 +53,14 @@ def test_register_weak_password_returns_422(client):
 
 # ---------- login ----------
 
+
 def test_login_failures_are_identical_for_wrong_password_and_unknown_email(client):
     register(client)
 
     wrong_pw = client.post("/auth/login", data={"username": EMAIL, "password": "wrong-pass1"})
-    unknown = client.post("/auth/login", data={"username": "nobody@example.com", "password": "wrong-pass1"})
+    unknown = client.post(
+        "/auth/login", data={"username": "nobody@example.com", "password": "wrong-pass1"}
+    )
 
     assert wrong_pw.status_code == unknown.status_code == 401
     assert wrong_pw.json()["error"]["message"] == unknown.json()["error"]["message"]
@@ -70,6 +75,7 @@ def test_login_email_is_case_insensitive(client):
 
 
 # ---------- GET /wallets/me ----------
+
 
 def test_wallet_me_new_user_has_empty_active_wallet(client):
     response = client.get("/wallets/me", headers=auth_headers(client))

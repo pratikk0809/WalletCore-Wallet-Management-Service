@@ -1,4 +1,5 @@
 """AuditLog model: who did what, and when. Append-only."""
+
 import uuid
 from datetime import datetime
 from typing import Any

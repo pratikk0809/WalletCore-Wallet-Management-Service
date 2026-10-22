@@ -1,4 +1,5 @@
 """Unit tests for AuditService (mocked repository)."""
+
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -89,9 +90,7 @@ def test_sensitive_keys_are_redacted(service):
 def test_nested_sensitive_keys_are_redacted_and_input_is_not_modified(service):
     original = {"request": {"password": "x", "amount": "5.00"}, "items": [{"token": "t"}]}
 
-    result = service.record(
-        AuditAction.LOGIN_FAILED, entity_type="user", metadata=original
-    )
+    result = service.record(AuditAction.LOGIN_FAILED, entity_type="user", metadata=original)
 
     assert result.details == {
         "request": {"password": "[redacted]", "amount": "5.00"},

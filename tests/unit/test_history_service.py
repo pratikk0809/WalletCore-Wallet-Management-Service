@@ -1,4 +1,5 @@
 """Unit tests for HistoryService (mocked repositories)."""
+
 import uuid
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -56,9 +57,7 @@ def make_txn(wallet: Wallet, minutes_ago: int) -> Transaction:
     )
 
 
-def test_more_rows_than_the_limit_gives_a_trimmed_page_and_a_cursor(
-    service, wallet, txn_repo
-):
+def test_more_rows_than_the_limit_gives_a_trimmed_page_and_a_cursor(service, wallet, txn_repo):
     rows = [make_txn(wallet, m) for m in (1, 2, 3)]
     txn_repo.list_for_wallet.return_value = rows
 
@@ -137,9 +136,7 @@ def test_missing_wallet_raises(service, wallet_repo):
         service.list_my_transactions(uuid.uuid4())
 
 
-def test_get_transaction_returns_it_together_with_the_wallet_id(
-    service, wallet, txn_repo
-):
+def test_get_transaction_returns_it_together_with_the_wallet_id(service, wallet, txn_repo):
     txn = make_txn(wallet, 1)
     txn_repo.get_for_wallet.return_value = txn
 

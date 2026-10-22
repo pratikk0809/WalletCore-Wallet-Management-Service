@@ -1,4 +1,5 @@
 """The standard error body, as a schema (used for documentation only)."""
+
 from pydantic import BaseModel
 
 

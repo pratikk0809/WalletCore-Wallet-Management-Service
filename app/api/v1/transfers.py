@@ -1,4 +1,5 @@
 """Transfer endpoint. HTTP only: parse, call the service, return."""
+
 from fastapi import APIRouter, Depends, Response
 
 from app.api.deps import get_current_user, get_transaction_service
@@ -23,10 +24,23 @@ router = APIRouter(prefix="/transfers", tags=["transfers"])
     responses={
         **REPLAYED,
         **errors(
-            401, 403, 404, 409, 422, 429,
+            401,
+            403,
+            404,
+            409,
+            422,
+            429,
             custom={
-                403: ("Your wallet or the destination wallet is frozen.", "WALLET_FROZEN", "Destination wallet is frozen."),
-                404: ("The destination wallet does not exist.", "WALLET_NOT_FOUND", "Destination wallet not found."),
+                403: (
+                    "Your wallet or the destination wallet is frozen.",
+                    "WALLET_FROZEN",
+                    "Destination wallet is frozen.",
+                ),
+                404: (
+                    "The destination wallet does not exist.",
+                    "WALLET_NOT_FOUND",
+                    "Destination wallet not found.",
+                ),
                 422: (
                     "Invalid amount, transfer to yourself, insufficient funds or daily limit exceeded.",
                     "INSUFFICIENT_FUNDS",

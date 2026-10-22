@@ -1,4 +1,5 @@
 """Business logic for money movement. Never imports FastAPI."""
+
 import logging
 import uuid
 from decimal import Decimal
@@ -129,9 +130,7 @@ class TransactionService:
         # 4. Lock BOTH wallet rows, in ascending ID order (done by the repository).
         locked = {
             w.id: w
-            for w in self.wallet_repo.get_by_ids_for_update(
-                [source.id, destination_wallet_id]
-            )
+            for w in self.wallet_repo.get_by_ids_for_update([source.id, destination_wallet_id])
         }
         source = locked.get(source.id)
         destination = locked.get(destination_wallet_id)
@@ -287,9 +286,7 @@ class TransactionService:
             self.limit_service.check_daily_limit(wallet.id, amount)
 
         # 7. Build the transaction and its two ledger entries.
-        new_balance: Decimal = (
-            wallet.balance + amount if is_deposit else wallet.balance - amount
-        )
+        new_balance: Decimal = wallet.balance + amount if is_deposit else wallet.balance - amount
         transaction = Transaction(
             id=uuid.uuid4(),
             user_id=user_id,
@@ -309,9 +306,7 @@ class TransactionService:
                 id=uuid.uuid4(),
                 transaction_id=transaction.id,
                 wallet_id=wallet.id,
-                direction=(
-                    LedgerDirection.CREDIT if is_deposit else LedgerDirection.DEBIT
-                ).value,
+                direction=(LedgerDirection.CREDIT if is_deposit else LedgerDirection.DEBIT).value,
                 amount=amount,
                 balance_after=new_balance,
             ),
@@ -320,9 +315,7 @@ class TransactionService:
                 id=uuid.uuid4(),
                 transaction_id=transaction.id,
                 wallet_id=None,
-                direction=(
-                    LedgerDirection.DEBIT if is_deposit else LedgerDirection.CREDIT
-                ).value,
+                direction=(LedgerDirection.DEBIT if is_deposit else LedgerDirection.CREDIT).value,
                 amount=amount,
                 balance_after=None,
             ),
@@ -386,9 +379,7 @@ class TransactionService:
             # slipped past the idempotency check. Treat it as a replay if the
             # original exists.
             self.db.rollback()
-            existing = self.transaction_repo.get_by_user_and_key(
-                user_id, idempotency_key
-            )
+            existing = self.transaction_repo.get_by_user_and_key(user_id, idempotency_key)
             if existing is None:
                 raise
             return self._replay(existing, request_hash)

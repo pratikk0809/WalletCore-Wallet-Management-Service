@@ -1,4 +1,5 @@
 """Unit tests for the startup checks in Settings (no .env file, no database)."""
+
 from decimal import Decimal
 
 import pytest
@@ -27,10 +28,10 @@ def test_a_valid_range_is_accepted():
 @pytest.mark.parametrize(
     "minimum, maximum",
     [
-        ("5.00", "5.00"),    # equal: nothing could ever be valid
-        ("10.00", "5.00"),   # swapped
-        ("0", "5.00"),       # zero minimum
-        ("-1", "5.00"),      # negative minimum
+        ("5.00", "5.00"),  # equal: nothing could ever be valid
+        ("10.00", "5.00"),  # swapped
+        ("0", "5.00"),  # zero minimum
+        ("-1", "5.00"),  # negative minimum
     ],
 )
 def test_a_broken_range_stops_the_app_at_startup(minimum, maximum):

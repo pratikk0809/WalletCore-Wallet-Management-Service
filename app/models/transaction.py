@@ -1,4 +1,5 @@
 """Transaction model: one business operation (deposit, withdrawal, transfer)."""
+
 import uuid
 from datetime import datetime
 from decimal import Decimal
@@ -23,9 +24,7 @@ class Transaction(Base):
     __tablename__ = "transactions"
     __table_args__ = (
         CheckConstraint("amount > 0", name="amount_positive"),
-        CheckConstraint(
-            "type IN ('deposit', 'withdrawal', 'transfer')", name="type_valid"
-        ),
+        CheckConstraint("type IN ('deposit', 'withdrawal', 'transfer')", name="type_valid"),
         CheckConstraint(
             "status IN ('pending', 'completed', 'failed', 'reversed')",
             name="status_valid",

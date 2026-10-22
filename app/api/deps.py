@@ -1,4 +1,5 @@
 """Shared FastAPI dependencies. This file is also where we wire services together."""
+
 from collections.abc import Generator
 
 from fastapi import Depends

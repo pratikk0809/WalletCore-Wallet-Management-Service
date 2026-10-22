@@ -1,4 +1,5 @@
 """Database access for wallets. No business rules here."""
+
 import uuid
 from collections.abc import Sequence
 

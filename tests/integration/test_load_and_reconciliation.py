@@ -1,4 +1,5 @@
 """Mixed-load concurrency tests, checked by the ledger auditor (real PostgreSQL)."""
+
 import random
 from collections import Counter, namedtuple
 from concurrent.futures import ThreadPoolExecutor
@@ -20,30 +21,33 @@ Op = namedtuple("Op", "kind user target amount key")
 def make_user(client, email):
     """Register + login. Returns (auth headers, wallet id)."""
     client.post("/auth/register", json={"email": email, "password": PASSWORD})
-    token = client.post(
-        "/auth/login", data={"username": email, "password": PASSWORD}
-    ).json()["access_token"]
+    token = client.post("/auth/login", data={"username": email, "password": PASSWORD}).json()[
+        "access_token"
+    ]
     headers = {"Authorization": f"Bearer {token}"}
     return headers, client.get("/wallets/me", headers=headers).json()["id"]
 
 
 def deposit(client, headers, amount, key):
     return client.post(
-        "/wallets/deposit", json={"amount": amount},
+        "/wallets/deposit",
+        json={"amount": amount},
         headers={**headers, "Idempotency-Key": key},
     )
 
 
 def withdraw(client, headers, amount, key):
     return client.post(
-        "/wallets/withdraw", json={"amount": amount},
+        "/wallets/withdraw",
+        json={"amount": amount},
         headers={**headers, "Idempotency-Key": key},
     )
 
 
 def transfer(client, headers, to_wallet_id, amount, key):
     return client.post(
-        "/transfers", json={"destination_wallet_id": to_wallet_id, "amount": amount},
+        "/transfers",
+        json={"destination_wallet_id": to_wallet_id, "amount": amount},
         headers={**headers, "Idempotency-Key": key},
     )
 
@@ -83,6 +87,7 @@ def build_operations(seed):
 
 
 # ---------- mixed load ----------
+
 
 @pytest.mark.parametrize("seed", [1, 2])
 def test_mixed_parallel_load_keeps_the_books_consistent(client, engine, seed):
@@ -167,6 +172,7 @@ def test_many_senders_to_one_recipient_lose_no_money(client, engine):
 
 
 # ---------- the auditor itself: does it really notice corruption? ----------
+
 
 def test_the_auditor_accepts_a_healthy_database(client, engine):
     headers, _ = make_user(client, "alice@example.com")

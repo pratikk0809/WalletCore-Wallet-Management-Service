@@ -1,4 +1,5 @@
 """Unit tests for WalletService (mocked repository)."""
+
 import uuid
 from decimal import Decimal
 from unittest.mock import MagicMock

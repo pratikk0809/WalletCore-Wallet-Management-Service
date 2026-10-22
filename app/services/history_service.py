@@ -1,4 +1,5 @@
 """Read-only business logic for transaction history. Never imports FastAPI."""
+
 import logging
 import uuid
 from datetime import datetime

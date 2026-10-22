@@ -1,4 +1,5 @@
 """Unit tests for StatementService (mocked repositories, fixed dates)."""
+
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -60,13 +61,13 @@ def test_statement_reports_balances_totals_and_lines(wallet_repo, wallet):
         make_row(wallet, "debit", "20.00", "150.00", "withdrawal"),
     ]
     ledger = make_ledger_repo(
-        Decimal("100.00"), Decimal("150.00"),
-        PeriodTotals(Decimal("70.00"), Decimal("20.00"), 2), rows,
+        Decimal("100.00"),
+        Decimal("150.00"),
+        PeriodTotals(Decimal("70.00"), Decimal("20.00"), 2),
+        rows,
     )
 
-    statement = StatementService(wallet_repo, ledger).get_statement(
-        wallet.user_id, START, END
-    )
+    statement = StatementService(wallet_repo, ledger).get_statement(wallet.user_id, START, END)
 
     assert statement.opening_balance == Decimal("100.00")
     assert statement.closing_balance == Decimal("150.00")
@@ -80,9 +81,7 @@ def test_statement_reports_balances_totals_and_lines(wallet_repo, wallet):
 def test_wallet_without_any_entries_is_all_zeros(wallet_repo, wallet):
     ledger = make_ledger_repo(None, None, PeriodTotals(Decimal("0"), Decimal("0"), 0))
 
-    statement = StatementService(wallet_repo, ledger).get_statement(
-        wallet.user_id, START, END
-    )
+    statement = StatementService(wallet_repo, ledger).get_statement(wallet.user_id, START, END)
 
     assert str(statement.opening_balance) == "0.00"
     assert str(statement.closing_balance) == "0.00"
@@ -92,13 +91,13 @@ def test_wallet_without_any_entries_is_all_zeros(wallet_repo, wallet):
 
 def test_first_ever_entry_inside_the_period_means_opening_zero(wallet_repo, wallet):
     ledger = make_ledger_repo(
-        None, Decimal("30.00"), PeriodTotals(Decimal("30.00"), Decimal("0"), 1),
+        None,
+        Decimal("30.00"),
+        PeriodTotals(Decimal("30.00"), Decimal("0"), 1),
         [make_row(wallet, "credit", "30.00", "30.00")],
     )
 
-    statement = StatementService(wallet_repo, ledger).get_statement(
-        wallet.user_id, START, END
-    )
+    statement = StatementService(wallet_repo, ledger).get_statement(wallet.user_id, START, END)
 
     assert str(statement.opening_balance) == "0.00"
     assert statement.closing_balance == Decimal("30.00")
@@ -108,8 +107,13 @@ def test_more_entries_than_the_limit_sets_truncated_but_totals_cover_everything(
     wallet_repo, wallet
 ):
     ledger = make_ledger_repo(
-        None, Decimal("30.00"), PeriodTotals(Decimal("30.00"), Decimal("0"), 3),
-        [make_row(wallet, "credit", "10.00", "10.00"), make_row(wallet, "credit", "10.00", "20.00")],
+        None,
+        Decimal("30.00"),
+        PeriodTotals(Decimal("30.00"), Decimal("0"), 3),
+        [
+            make_row(wallet, "credit", "10.00", "10.00"),
+            make_row(wallet, "credit", "10.00", "20.00"),
+        ],
     )
 
     statement = StatementService(wallet_repo, ledger).get_statement(
@@ -152,16 +156,14 @@ def test_dates_without_a_timezone_are_treated_as_utc(wallet_repo, wallet):
 
     assert ledger.last_balance_before.call_args_list == [
         call(wallet.id, START),  # opening: balance before the period starts
-        call(wallet.id, END),    # closing: balance before the period ends
+        call(wallet.id, END),  # closing: balance before the period ends
     ]
 
 
 def test_period_and_limit_are_passed_to_the_repository(wallet_repo, wallet):
     ledger = make_ledger_repo(None, None, PeriodTotals(Decimal("0"), Decimal("0"), 0))
 
-    StatementService(wallet_repo, ledger).get_statement(
-        wallet.user_id, START, END, limit=50
-    )
+    StatementService(wallet_repo, ledger).get_statement(wallet.user_id, START, END, limit=50)
 
     ledger.totals_between.assert_called_once_with(wallet.id, START, END)
     ledger.list_between.assert_called_once_with(wallet.id, START, END, 50)
@@ -175,19 +177,16 @@ def test_missing_wallet_raises(wallet_repo):
         StatementService(wallet_repo, ledger).get_statement(uuid.uuid4(), START, END)
 
 
-def test_a_ledger_that_does_not_add_up_is_logged_as_an_error(
-    wallet_repo, wallet, caplog
-):
+def test_a_ledger_that_does_not_add_up_is_logged_as_an_error(wallet_repo, wallet, caplog):
     # 100 + 10 - 0 = 110, but the ledger claims the closing balance is 150.
     ledger = make_ledger_repo(
-        Decimal("100.00"), Decimal("150.00"),
+        Decimal("100.00"),
+        Decimal("150.00"),
         PeriodTotals(Decimal("10.00"), Decimal("0"), 1),
     )
 
     with caplog.at_level(logging.ERROR, logger="app.services.statement_service"):
-        statement = StatementService(wallet_repo, ledger).get_statement(
-            wallet.user_id, START, END
-        )
+        statement = StatementService(wallet_repo, ledger).get_statement(wallet.user_id, START, END)
 
     assert "statement_reconciliation_mismatch" in caplog.text
     assert statement.closing_balance == Decimal("150.00")  # still returned

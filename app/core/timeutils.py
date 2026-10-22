@@ -1,4 +1,5 @@
 """Small time helpers. Pure functions."""
+
 from datetime import datetime, timezone
 
 
