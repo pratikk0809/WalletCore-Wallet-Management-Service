@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
+from app.api.responses import errors
 
 from app.api.deps import get_current_user, get_history_service
 from app.models.enums import TransactionStatus, TransactionType
@@ -25,7 +26,8 @@ def _to_item(transaction: Transaction, wallet_id: uuid.UUID) -> TransactionHisto
     return TransactionHistoryItem(**base, direction=direction)
 
 
-@router.get("", response_model=TransactionListResponse)
+@router.get("", response_model=TransactionListResponse, summary="List my transactions",
+            responses=errors(401, 422))
 def list_transactions(
     limit: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
     cursor: str | None = Query(
@@ -56,7 +58,15 @@ def list_transactions(
     )
 
 
-@router.get("/{transaction_id}", response_model=TransactionHistoryItem)
+@router.get(
+    "/{transaction_id}",
+    response_model=TransactionHistoryItem,
+    summary="Get one transaction",
+    responses=errors(
+        401, 404, 422,
+        custom={404: ("Unknown transaction, or one you took no part in.", "TRANSACTION_NOT_FOUND", "Transaction not found.")},
+    ),
+)
 def get_transaction(
     transaction_id: uuid.UUID,
     user: User = Depends(get_current_user),

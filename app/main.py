@@ -7,6 +7,7 @@ from app.api import health
 from app.api.v1 import admin, auth, transactions, transfers, wallets
 from app.core.config import get_settings
 from app.core.logging import setup_logging
+from app.core.openapi import DESCRIPTION, TAGS, docs_urls
 from app.exceptions import register_exception_handlers
 from app.middleware.request_id import RequestIDMiddleware
 
@@ -18,7 +19,13 @@ logger = logging.getLogger(__name__)
 
 # Note: we don't pass debug=settings.debug to FastAPI. With debug on, Starlette
 # shows its own HTML crash page and skips our global 500 handler.
-app = FastAPI(title=settings.app_name)
+app = FastAPI(
+    title=settings.app_name,
+    version="1.0.0",
+    description=DESCRIPTION,
+    openapi_tags=TAGS,
+    **docs_urls(settings.environment),  # /docs, /redoc, /openapi.json only when local
+)
 
 app.add_middleware(RequestIDMiddleware)
 register_exception_handlers(app)

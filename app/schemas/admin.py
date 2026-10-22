@@ -8,8 +8,11 @@ from pydantic import BaseModel, Field, StrictBool
 
 class WalletFreezeRequest(BaseModel):
     # StrictBool: only a real JSON true/false is accepted ("yes" or 1 -> 422).
-    frozen: StrictBool
-    reason: str | None = Field(default=None, max_length=255)
+    frozen: StrictBool = Field(examples=[True], description="true = freeze, false = unfreeze.")
+    reason: str | None = Field(
+        default=None, max_length=255, examples=["suspected fraud"],
+        description="Free text for the audit log. Keep it free of personal data.",
+    )
 
 
 class AdminWalletResponse(BaseModel):

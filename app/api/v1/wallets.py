@@ -3,6 +3,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, Response
 from app.api.rate_limits import limit_money
+from app.api.responses import REPLAYED, errors
 
 from app.api.deps import (
     get_current_user,
@@ -38,7 +39,8 @@ from app.services.wallet_service import WalletService
 router = APIRouter(prefix="/wallets", tags=["wallets"])
 
 
-@router.get("/me", response_model=WalletResponse)
+@router.get("/me", response_model=WalletResponse, summary="My wallet and balance",
+            responses=errors(401))
 def get_my_wallet(
     user: User = Depends(get_current_user),
     service: WalletService = Depends(get_wallet_service),
@@ -47,7 +49,8 @@ def get_my_wallet(
     return service.get_my_wallet(user.id)
 
 
-@router.get("/me/limits", response_model=DailyLimitResponse)
+@router.get("/me/limits", response_model=DailyLimitResponse, summary="My daily limit usage",
+            responses=errors(401))
 def get_my_limits(
     user: User = Depends(get_current_user),
     wallet_service: WalletService = Depends(get_wallet_service),
@@ -64,7 +67,8 @@ def get_my_limits(
     )
 
 
-@router.get("/me/statement", response_model=StatementResponse)
+@router.get("/me/statement", response_model=StatementResponse, summary="My account statement",
+            responses=errors(401, 422))
 def get_my_statement(
     period_start: datetime = Query(
         ..., description="Inclusive. ISO 8601, e.g. 2026-10-01T00:00:00Z"
@@ -111,6 +115,14 @@ def get_my_statement(
     response_model=TransactionResponse,
     status_code=201,
     dependencies=[Depends(limit_money)],
+    responses={
+        **REPLAYED,
+        **errors(
+            401, 403, 409, 422, 429,
+            custom={403: ("Your wallet is frozen.",
+                          "WALLET_FROZEN", "Wallet is frozen.")},
+        ),
+    },
 )
 def deposit(
     body: DepositRequest,
@@ -120,7 +132,8 @@ def deposit(
     service: TransactionService = Depends(get_transaction_service),
 ) -> Transaction:
     """Add funds to your wallet. 201 = new deposit, 200 = replay of an earlier request."""
-    result = service.deposit(user.id, idempotency_key, body.amount, body.reference)
+    result = service.deposit(user.id, idempotency_key,
+                             body.amount, body.reference)
     return respond(result, response)
 
 
@@ -128,7 +141,22 @@ def deposit(
     "/withdraw",
     response_model=TransactionResponse,
     status_code=201,
+    summary="Withdraw money",
     dependencies=[Depends(limit_money)],
+    responses={
+        **REPLAYED,
+        **errors(
+            401, 403, 409, 422, 429,
+            custom={
+                403: ("Your wallet is frozen.", "WALLET_FROZEN", "Wallet is frozen."),
+                422: (
+                    "Invalid amount, insufficient funds or daily limit exceeded.",
+                    "INSUFFICIENT_FUNDS",
+                    "Wallet balance is too low.",
+                ),
+            },
+        ),
+    },
 )
 def withdraw(
     body: WithdrawRequest,
@@ -138,5 +166,6 @@ def withdraw(
     service: TransactionService = Depends(get_transaction_service),
 ) -> Transaction:
     """Withdraw funds. 201 = new, 200 = replay, 422 = insufficient funds or daily limit."""
-    result = service.withdraw(user.id, idempotency_key, body.amount, body.reference)
+    result = service.withdraw(user.id, idempotency_key,
+                              body.amount, body.reference)
     return respond(result, response)
