@@ -1,6 +1,6 @@
 # Wallet & Transaction Service
 
-![CI](https://github.com/pratik0809/WalletCore-Wallet-Management-Service/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/pratikk0809/WalletCore-Wallet-Management-Service/actions/workflows/ci.yml/badge.svg)](https://github.com/pratikk0809/WalletCore-Wallet-Management-Service/actions/workflows/ci.yml)
 
 A backend wallet and transaction service (a mini fintech core) built with FastAPI, PostgreSQL, SQLAlchemy 2.0 and Alembic. It focuses on getting money handling right: a double-entry ledger, idempotent requests, row-level locking, an audit trail, and database-enforced rules.
 
